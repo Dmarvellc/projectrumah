@@ -4,17 +4,18 @@ import { useState } from "react";
 import Link from "next/link";
 import { IconBolt, IconCheck, IconSlide, IconExternal, IconTrash, IconPlus, IconMega, IconStar, IconClose } from "@/components/icons";
 
-// Kompresi foto di browser: sisi terpanjang 1600px, JPEG 0.82.
+// Kompresi foto di browser: sisi terpanjang 1200px, JPEG 0.7 — ringan agar
+// tidak melewati batas body server (413).
 function compressFile(file) {
   return new Promise((resolve) => {
     const img = new window.Image();
     img.onload = () => {
-      const scale = Math.min(1, 1600 / Math.max(img.width, img.height));
+      const scale = Math.min(1, 1200 / Math.max(img.width, img.height));
       const canvas = document.createElement("canvas");
       canvas.width = Math.round(img.width * scale);
       canvas.height = Math.round(img.height * scale);
       canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
-      const url = canvas.toDataURL("image/jpeg", 0.82);
+      const url = canvas.toDataURL("image/jpeg", 0.7);
       resolve({ url, media_type: "image/jpeg", data: url.split(",")[1] });
     };
     img.onerror = () => resolve(null);
@@ -58,7 +59,17 @@ export default function AutopilotStudio({ initialQueue = [] }) {
       headers: { "Content-Type": "application/json" },
       ...opts,
     });
-    const json = await res.json();
+    // Respons bisa non-JSON (mis. 413 "Request Entity Too Large").
+    const raw = await res.text();
+    let json;
+    try {
+      json = JSON.parse(raw);
+    } catch {
+      if (res.status === 413 || /too large|request entity/i.test(raw)) {
+        throw new Error("Foto terlalu besar/banyak. Kurangi jumlah foto (coba ≤ 6) lalu jalankan lagi.");
+      }
+      throw new Error(`Server bermasalah (${res.status}). Coba lagi.`);
+    }
     if (!res.ok) throw new Error(json.error || "Gagal");
     return json;
   }
@@ -75,7 +86,7 @@ export default function AutopilotStudio({ initialQueue = [] }) {
           specs,
           publish,
           marketing,
-          images: images.map(({ media_type, data }) => ({ media_type, data })),
+          images: images.slice(0, 8).map(({ media_type, data }) => ({ media_type, data })),
         }),
       });
       setBatch(result);
