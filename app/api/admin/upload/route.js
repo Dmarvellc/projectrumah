@@ -9,7 +9,7 @@ export const maxDuration = 60;
 export async function POST(req) {
   try {
     const { images = [] } = await req.json();
-    return NextResponse.json({ urls: saveImagesToUploads(images) });
+    return NextResponse.json({ urls: await saveImagesToUploads(images) });
   } catch (err) {
     return NextResponse.json({ error: String(err?.message || err) }, { status: 500 });
   }
