@@ -2,10 +2,11 @@
 
 import { usePathname } from "next/navigation";
 import DashboardShell from "@/components/DashboardShell";
-import { IconGrid, IconPlus, IconList, IconMega, IconInbox, IconBolt, IconUsers, IconArea } from "@/components/icons";
+import { IconGrid, IconPlus, IconList, IconMega, IconInbox, IconBolt, IconUsers, IconArea, IconCalendar } from "@/components/icons";
 
 const NAV = [
   { href: "/admin", label: "Ringkasan", icon: IconGrid, exact: true },
+  { href: "/admin/agenda", label: "Agenda", icon: IconCalendar },
   { href: "/admin/otomasi", label: "Otomasi", icon: IconBolt },
   { href: "/admin/listings/new", label: "Studio Listing", icon: IconPlus },
   { href: "/admin/listings", label: "Kelola Listing", icon: IconList },

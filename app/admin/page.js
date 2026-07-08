@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { stats, listJobs, listLeads, listClients } from "@/lib/store";
+import { stats, listJobs, listLeads, listClients, listTasks } from "@/lib/store";
 import { timeAgo } from "@/lib/utils";
-import { IconPlus, IconBolt, IconUsers, IconInbox } from "@/components/icons";
+import { IconPlus, IconBolt, IconUsers, IconInbox, IconCalendar } from "@/components/icons";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Ringkasan" };
@@ -13,6 +13,11 @@ export default function AdminHome() {
   const clients = listClients();
   const activeClients = clients.filter((c) => c.stage !== "batal" && c.stage !== "closing").length;
 
+  const today = new Date().toISOString().slice(0, 10);
+  const openTasks = listTasks().filter((t) => !t.done);
+  const dueTasks = openTasks.filter((t) => t.due && t.due <= today).sort((a, b) => (a.due || "").localeCompare(b.due || ""));
+  const overdueCount = openTasks.filter((t) => t.due && t.due < today).length;
+
   return (
     <div>
       <header className="mb-8">
@@ -21,19 +26,42 @@ export default function AdminHome() {
 
       {/* STATS */}
       <div className="grid grid-cols-2 gap-5 xl:grid-cols-4">
-        <Stat label="Listing" value={s.listingsTotal} href="/admin/listings" />
+        <Stat label="Perlu ditindak" value={dueTasks.length} href="/admin/agenda" highlight={dueTasks.length > 0} />
         <Stat label="Klien aktif" value={activeClients} href="/admin/clients" />
-        <Stat label="Leads baru" value={s.leadsNew} href="/admin/leads" highlight={s.leadsNew > 0} />
-        <Stat label="Otomasi berjalan" value={s.jobs} href="/admin/otomasi" />
+        <Stat label="Leads baru" value={s.leadsNew} href="/admin/leads" />
+        <Stat label="Listing" value={s.listingsTotal} href="/admin/listings" />
       </div>
 
       {/* QUICK ACTIONS */}
       <div className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+        <Action href="/admin/agenda" icon={IconCalendar} title="Agenda" />
         <Action href="/admin/otomasi" icon={IconBolt} title="Otomasi" />
-        <Action href="/admin/listings/new" icon={IconPlus} title="Studio Listing" />
         <Action href="/admin/clients" icon={IconUsers} title="Klien" />
         <Action href="/admin/leads" icon={IconInbox} title="Leads" />
       </div>
+
+      {/* AGENDA HARI INI */}
+      <section className="mt-8 card p-8">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-extrabold text-ink">
+            Perlu ditindak hari ini{overdueCount > 0 ? <span className="text-red-600"> · {overdueCount} terlambat</span> : null}
+          </h2>
+          <Link href="/admin/agenda" className="text-base font-extrabold text-pine-700 hover:underline">Agenda</Link>
+        </div>
+        {dueTasks.length === 0 ? (
+          <p className="mt-4 text-lg font-semibold text-ink-faint">Tidak ada tugas jatuh tempo. Rapi! ✓</p>
+        ) : (
+          <ul className="mt-4 divide-y divide-ink/10">
+            {dueTasks.slice(0, 6).map((t) => (
+              <li key={t.id} className="flex items-center gap-4 py-3.5">
+                <span className={`h-3 w-3 shrink-0 rounded-full ${t.due < today ? "bg-red-600" : "bg-pine-600"}`} />
+                <span className="min-w-0 flex-1 truncate text-lg font-bold text-ink">{t.title}</span>
+                {t.due < today && <span className="shrink-0 text-base font-extrabold text-red-600">Terlambat</span>}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       <div className="mt-8 grid gap-6 xl:grid-cols-2">
         {/* RECENT JOBS */}

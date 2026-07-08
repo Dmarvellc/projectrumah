@@ -122,6 +122,12 @@ export const IconUsers = (p) => (
 export const IconCode = (p) => (
   <Svg {...p}><path d="m8 8-4 4 4 4M16 8l4 4-4 4" /><path d="m13 5-2 14" /></Svg>
 );
+export const IconCalendar = (p) => (
+  <Svg {...p}><rect x="3.5" y="4.5" width="17" height="16" rx="2" /><path d="M3.5 9h17M8 3v3M16 3v3" /><path d="M7.5 13h3M13.5 13h3M7.5 16.5h3M13.5 16.5h3" /></Svg>
+);
+export const IconPrint = (p) => (
+  <Svg {...p}><path d="M6 9V3h12v6" /><rect x="4" y="9" width="16" height="8" rx="1.5" /><path d="M7 17h10v4H7z" /><path d="M17 12.5h.01" /></Svg>
+);
 export const IconBolt = (p) => (
   <Svg {...p}><path d="M13 3 5 13h6l-1 8 8-10h-6l1-8Z" /></Svg>
 );

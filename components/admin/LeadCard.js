@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { formatDate } from "@/lib/utils";
-import { IconWand, IconChat, IconCheck } from "@/components/icons";
+import { IconWand, IconChat, IconCheck, IconCalendar } from "@/components/icons";
 
 const TEMP = {
   hot: { label: "Panas", cls: "bg-red-600 text-white" },
@@ -46,6 +46,31 @@ export default function LeadCard({ lead }) {
     router.refresh();
   }
 
+  const [taskMsg, setTaskMsg] = useState("");
+  async function makeTask() {
+    setBusy(true);
+    const title = ai?.nextAction || `Follow-up ${lead.name}`;
+    const res = await fetch("/api/admin/tasks", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        task: {
+          title: title.slice(0, 120),
+          due: new Date().toISOString().slice(0, 10),
+          kind: "followup",
+          leadId: lead.id,
+          listingSlug: lead.propertySlug || null,
+          notes: lead.message || "",
+        },
+      }),
+    });
+    setBusy(false);
+    if (res.ok) {
+      setTaskMsg("Ditambahkan ke Agenda ✓");
+      setTimeout(() => setTaskMsg(""), 2500);
+    }
+  }
+
   async function copy(text, i) {
     try {
       await navigator.clipboard.writeText(text);
@@ -75,14 +100,18 @@ export default function LeadCard({ lead }) {
         </div>
         <div className="flex flex-col items-end gap-2">
           <span className="text-base font-semibold text-ink-faint">{formatDate(lead.createdAt)}</span>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap justify-end gap-2">
             <button onClick={analyze} disabled={busy} className="btn-outline py-2 text-base disabled:opacity-50">
               <IconWand size={18} /> {busy ? "…" : ai ? "Analisis ulang" : "Analisis AI"}
+            </button>
+            <button onClick={makeTask} disabled={busy} className="btn-outline py-2 text-base disabled:opacity-50">
+              <IconCalendar size={18} /> Jadikan tugas
             </button>
             <button onClick={toggleStatus} disabled={busy} className="btn-outline py-2 text-base disabled:opacity-50">
               {lead.status === "new" ? "Tandai dihubungi" : "Tandai baru"}
             </button>
           </div>
+          {taskMsg && <span className="text-base font-extrabold text-pine-700">{taskMsg}</span>}
         </div>
       </div>
 

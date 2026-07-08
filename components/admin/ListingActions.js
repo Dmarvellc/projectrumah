@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { IconWand, IconTrash, IconExternal } from "@/components/icons";
+import { IconWand, IconTrash, IconExternal, IconPrint } from "@/components/icons";
 import Link from "next/link";
 
 export default function ListingActions({ slug, canImprove = true }) {
@@ -36,8 +36,11 @@ export default function ListingActions({ slug, canImprove = true }) {
 
   return (
     <div className="flex items-center gap-1">
-      <Link href={`/properti/${slug}`} target="_blank" className="grid h-8 w-8 place-items-center rounded-lg text-ink-faint hover:bg-ink/[.05] hover:text-pine-700" title="Lihat">
-        <IconExternal size={16} />
+      <Link href={`/properti/${slug}`} target="_blank" className="grid h-9 w-9 place-items-center rounded-xl text-ink-faint hover:bg-ink/[.05] hover:text-pine-700" title="Lihat">
+        <IconExternal size={18} />
+      </Link>
+      <Link href={`/brosur/${slug}`} target="_blank" className="grid h-9 w-9 place-items-center rounded-xl text-ink-faint hover:bg-ink/[.05] hover:text-pine-700" title="Brosur (cetak/PDF)">
+        <IconPrint size={18} />
       </Link>
       {canImprove && (
         <button onClick={improve} disabled={busy} className="grid h-9 w-9 place-items-center rounded-xl text-ink-faint hover:bg-ink/[.05] hover:text-pine-700 disabled:opacity-50" title="Improve with AI">

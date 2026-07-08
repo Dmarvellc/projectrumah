@@ -5,7 +5,7 @@ import Link from "next/link";
 import PropertyMap from "@/components/PropertyMap";
 import { TYPE_LABELS } from "@/data";
 import { formatPrice } from "@/lib/utils";
-import { IconWand, IconCheck, IconSlide, IconExternal, IconMega, IconPin, IconHome, IconDoc, IconStar, IconClose } from "@/components/icons";
+import { IconWand, IconCheck, IconSlide, IconExternal, IconMega, IconPin, IconHome, IconDoc, IconStar, IconClose, IconPrint } from "@/components/icons";
 
 const STAGES = [
   { key: "content", label: "Analisis AI", desc: "Foto + data → konten, selling points, cover terbaik" },
@@ -394,6 +394,7 @@ export default function PipelineStudio() {
               <div className="mt-4 flex flex-wrap gap-3">
                 <Link href={result.url} target="_blank" className="btn-primary py-2.5"><IconExternal size={18} /> Lihat halaman</Link>
                 <button onClick={downloadPpt} className="btn-outline py-2.5"><IconSlide size={18} /> Unduh PPT</button>
+                <Link href={`/brosur/${result.slug}`} target="_blank" className="btn-outline py-2.5"><IconPrint size={18} /> Brosur PDF</Link>
               </div>
             )}
           </StageCard>
