@@ -29,19 +29,30 @@ const INITIAL = {
 const fmtID = (digits) => (digits ? Number(digits).toLocaleString("id-ID") : "");
 const digitsOnly = (s) => String(s).replace(/\D/g, "");
 
-// Kompresi foto di browser: sisi terpanjang 1200px, JPEG 0.7 — cukup untuk
-// analisis AI & galeri, tapi ringan agar tidak melewati batas body server.
+// Skala 1 foto → dataURL JPEG.
+function scaleToDataUrl(img, maxDim, quality) {
+  const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(img.width * scale);
+  canvas.height = Math.round(img.height * scale);
+  canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL("image/jpeg", quality);
+}
+
+// Dua versi: 'data' (medium, untuk galeri) & 'analysisData' (kecil, untuk
+// vision AI). Versi analisis sengaja mungil agar request tak pernah 413.
 function compressFile(file) {
   return new Promise((resolve) => {
     const img = new window.Image();
     img.onload = () => {
-      const scale = Math.min(1, 1200 / Math.max(img.width, img.height));
-      const canvas = document.createElement("canvas");
-      canvas.width = Math.round(img.width * scale);
-      canvas.height = Math.round(img.height * scale);
-      canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
-      const url = canvas.toDataURL("image/jpeg", 0.7);
-      resolve({ url, media_type: "image/jpeg", data: url.split(",")[1] });
+      const medium = scaleToDataUrl(img, 1200, 0.72);
+      const small = scaleToDataUrl(img, 768, 0.55);
+      resolve({
+        url: medium,
+        media_type: "image/jpeg",
+        data: medium.split(",")[1],
+        analysisData: small.split(",")[1],
+      });
     };
     img.onerror = () => resolve(null);
     img.src = URL.createObjectURL(file);
@@ -130,11 +141,11 @@ export default function PipelineStudio() {
     let assembled = { ...details };
 
     try {
-      // 1. Analisis AI (konten + selling points + pilihan cover)
+      // 1. Analisis AI — kirim versi KECIL (analysisData), maks 6 → request mungil, bebas 413
       setStatus((s) => ({ ...s, content: "running" }));
       const content = await call("/api/admin/pipeline/content", {
         details,
-        images: images.slice(0, 8).map(({ media_type, data }) => ({ media_type, data })),
+        images: images.slice(0, 6).map(({ media_type, analysisData }) => ({ media_type, data: analysisData })),
       });
       assembled = {
         ...assembled,
@@ -151,14 +162,14 @@ export default function PipelineStudio() {
       setListing({ ...assembled });
       setStatus((s) => ({ ...s, content: "done" }));
 
-      // 2. Simpan foto asli penjual
+      // 2. Simpan foto asli penjual — diunggah BERBATCH (≤3/permintaan)
+      //    agar tiap request kecil dan tak pernah melampaui batas body (413).
       setStatus((s) => ({ ...s, upload: "running" }));
       let uploadedUrls = [];
-      if (images.length) {
-        const up = await call("/api/admin/upload", {
-          images: images.map(({ media_type, data }) => ({ media_type, data })),
-        });
-        uploadedUrls = up.urls || [];
+      for (let i = 0; i < images.length; i += 3) {
+        const batch = images.slice(i, i + 3).map(({ media_type, data }) => ({ media_type, data }));
+        const up = await call("/api/admin/upload", { images: batch });
+        uploadedUrls.push(...(up.urls || []));
       }
       setStatus((s) => ({ ...s, upload: "done" }));
 

@@ -4,19 +4,28 @@ import { useState } from "react";
 import Link from "next/link";
 import { IconBolt, IconCheck, IconSlide, IconExternal, IconTrash, IconPlus, IconMega, IconStar, IconClose } from "@/components/icons";
 
-// Kompresi foto di browser: sisi terpanjang 1200px, JPEG 0.7 — ringan agar
-// tidak melewati batas body server (413).
+function scaleToDataUrl(img, maxDim, quality) {
+  const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(img.width * scale);
+  canvas.height = Math.round(img.height * scale);
+  canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL("image/jpeg", quality);
+}
+
+// Dua versi: 'data' (medium, galeri) & 'analysisData' (kecil, vision AI).
 function compressFile(file) {
   return new Promise((resolve) => {
     const img = new window.Image();
     img.onload = () => {
-      const scale = Math.min(1, 1200 / Math.max(img.width, img.height));
-      const canvas = document.createElement("canvas");
-      canvas.width = Math.round(img.width * scale);
-      canvas.height = Math.round(img.height * scale);
-      canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
-      const url = canvas.toDataURL("image/jpeg", 0.7);
-      resolve({ url, media_type: "image/jpeg", data: url.split(",")[1] });
+      const medium = scaleToDataUrl(img, 1200, 0.72);
+      const small = scaleToDataUrl(img, 768, 0.55);
+      resolve({
+        url: medium,
+        media_type: "image/jpeg",
+        data: medium.split(",")[1],
+        analysisData: small.split(",")[1],
+      });
     };
     img.onerror = () => resolve(null);
     img.src = URL.createObjectURL(file);
@@ -80,13 +89,22 @@ export default function AutopilotStudio({ initialQueue = [] }) {
     setError("");
     setBatch(null);
     try {
+      // Unggah galeri berbatch (≤3/req) → URL; kirim hanya URL + versi analisis
+      // kecil ke server. Tak ada payload besar → bebas 413.
+      let galleryUrls = [];
+      for (let i = 0; i < images.length; i += 3) {
+        const batch = images.slice(i, i + 3).map(({ media_type, data }) => ({ media_type, data }));
+        const up = await call("/api/admin/upload", { method: "POST", body: JSON.stringify({ images: batch }) });
+        galleryUrls.push(...(up.urls || []));
+      }
       const result = await call("/api/admin/autopilot/run", {
         method: "POST",
         body: JSON.stringify({
           specs,
           publish,
           marketing,
-          images: images.slice(0, 8).map(({ media_type, data }) => ({ media_type, data })),
+          galleryUrls,
+          images: images.slice(0, 6).map(({ media_type, analysisData }) => ({ media_type, data: analysisData })),
         }),
       });
       setBatch(result);
