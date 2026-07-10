@@ -1,6 +1,6 @@
 import "./globals.css";
 import { Nunito_Sans } from "next/font/google";
-import { SiteHeader, SiteFooter } from "@/components/SiteChrome";
+import { SiteHeader, SiteFooter, WaFloat } from "@/components/SiteChrome";
 import { SITE } from "@/data";
 
 // Satu keluarga huruf untuk seluruh situs: Nunito Sans — tegas & bersih.
@@ -83,6 +83,7 @@ export default function RootLayout({ children }) {
         <SiteHeader />
         <main className="flex-1">{children}</main>
         <SiteFooter />
+        <WaFloat />
       </body>
     </html>
   );

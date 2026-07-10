@@ -4,6 +4,7 @@ import { slugify } from "@/lib/slug";
 import { getListing, saveListing } from "@/lib/store";
 import { geocode } from "@/lib/geo";
 import { generateLocationInsight } from "@/lib/ai";
+import { blobDbEnabled, saveAssetToBlob } from "@/lib/db-blob";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -38,7 +39,14 @@ export async function GET(req) {
 
     const base64 = await buildDeckBase64(listing);
     const filename = `${slugify(listing.title || "listing")}.pptx`;
-    return new NextResponse(Buffer.from(base64, "base64"), {
+    const buf = Buffer.from(base64, "base64");
+
+    // Simpan materi PPT permanen (Blob) + catat di listing.
+    if (blobDbEnabled() && listing.source !== "seed") {
+      const url = await saveAssetToBlob(`${listing.slug}.pptx`, buf, "application/vnd.openxmlformats-officedocument.presentationml.presentation");
+      if (url) saveListing({ ...listing, pptUrl: url, pptGeneratedAt: new Date().toISOString() });
+    }
+    return new NextResponse(buf, {
       headers: {
         "Content-Type": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
         "Content-Disposition": `attachment; filename="${filename}"`,

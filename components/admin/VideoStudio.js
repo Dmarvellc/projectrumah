@@ -111,6 +111,75 @@ function rr(ctx, x, y, w, h, r) {
   ctx.roundRect(x, y, w, h, r);
 }
 
+// ---------- musik latar: disintesis sendiri (bebas royalti) ----------
+// Pad akor hangat (Cmaj7→Am7→Fmaj7→G6) + arpeggio lembut, fade in/out.
+async function synthMusic(durationSec) {
+  const sr = 44100;
+  const ctx = new OfflineAudioContext(2, Math.ceil(sr * durationSec), sr);
+  const master = ctx.createGain();
+  const lp = ctx.createBiquadFilter();
+  lp.type = "lowpass";
+  lp.frequency.value = 2000;
+  master.connect(lp).connect(ctx.destination);
+  master.gain.setValueAtTime(0.0001, 0);
+  master.gain.linearRampToValueAtTime(0.9, 1.2);
+  master.gain.setValueAtTime(0.9, Math.max(1.2, durationSec - 1.6));
+  master.gain.linearRampToValueAtTime(0.0001, durationSec);
+
+  const CHORDS = [
+    [261.63, 329.63, 392.0, 493.88], // Cmaj7
+    [220.0, 261.63, 329.63, 392.0], // Am7
+    [174.61, 220.0, 261.63, 329.63], // Fmaj7
+    [196.0, 246.94, 293.66, 369.99], // G6(add F#)
+  ];
+  const BAR = 2.4; // detik per akor
+
+  for (let t = 0; t < durationSec; t += BAR) {
+    const chord = CHORDS[Math.round(t / BAR) % CHORDS.length];
+    // pad: 2 osilator detune per nada
+    chord.forEach((f) => {
+      [-4, 4].forEach((cents) => {
+        const o = ctx.createOscillator();
+        o.type = "triangle";
+        o.frequency.value = f;
+        o.detune.value = cents;
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.linearRampToValueAtTime(0.028, t + 0.7);
+        g.gain.linearRampToValueAtTime(0.0001, Math.min(t + BAR + 0.5, durationSec));
+        o.connect(g).connect(master);
+        o.start(t);
+        o.stop(Math.min(t + BAR + 0.6, durationSec));
+      });
+    });
+    // arpeggio: nada akor satu oktaf di atas, tiap 0.6s
+    for (let i = 0; i < 4; i++) {
+      const ts = t + i * 0.6;
+      if (ts >= durationSec - 0.4) break;
+      const o = ctx.createOscillator();
+      o.type = "sine";
+      o.frequency.value = chord[(i * 2) % chord.length] * 2;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.05, ts);
+      g.gain.exponentialRampToValueAtTime(0.0004, ts + 0.55);
+      o.connect(g).connect(master);
+      o.start(ts);
+      o.stop(ts + 0.6);
+    }
+  }
+  return ctx.startRendering();
+}
+
+async function aacSupported() {
+  if (typeof AudioEncoder === "undefined") return false;
+  try {
+    const { supported } = await AudioEncoder.isConfigSupported({ codec: "mp4a.40.2", sampleRate: 44100, numberOfChannels: 2, bitrate: 128000 });
+    return supported;
+  } catch {
+    return false;
+  }
+}
+
 const easeOut = (t) => 1 - Math.pow(1 - t, 3);
 // masuk-lembut untuk blok teks: fade + naik
 function rise(p, delay = 0) {
@@ -126,6 +195,7 @@ export default function VideoStudio({ listings = [], initialSlug = "" }) {
   );
   const [format, setFormat] = useState("story");
   const [phase, setPhase] = useState("idle"); // idle | loading | preview | recording | done
+  const [music, setMusic] = useState(true);
   const [videoUrl, setVideoUrl] = useState("");
   const [videoExt, setVideoExt] = useState("mp4");
   const [progress, setProgress] = useState(0);
@@ -423,9 +493,11 @@ export default function VideoStudio({ listings = [], initialSlug = "" }) {
 
       if (codec) {
         // Jalur utama: encode frame-per-frame (deterministik, hasil MP4 asli).
+        const withMusic = music && (await aacSupported());
         const muxer = new Muxer({
           target: new ArrayBufferTarget(),
           video: { codec: "avc", width: w, height: h },
+          ...(withMusic ? { audio: { codec: "aac", sampleRate: 44100, numberOfChannels: 2 } } : {}),
           fastStart: "in-memory",
           firstTimestampBehavior: "offset",
         });
@@ -459,6 +531,39 @@ export default function VideoStudio({ listings = [], initialSlug = "" }) {
           }
         }
         await encoder.flush();
+
+        // Musik latar → AAC (setelah video; muxer menata interleaving-nya)
+        if (withMusic) {
+          const audioBuf = await synthMusic(total);
+          let aErr = null;
+          const aEnc = new AudioEncoder({
+            output: (chunk, meta) => muxer.addAudioChunk(chunk, meta),
+            error: (e) => (aErr = e),
+          });
+          aEnc.configure({ codec: "mp4a.40.2", sampleRate: 44100, numberOfChannels: 2, bitrate: 128000 });
+          const CH = 1024;
+          const L = audioBuf.getChannelData(0);
+          const R = audioBuf.getChannelData(1);
+          for (let off = 0; off < audioBuf.length; off += CH) {
+            if (aErr) throw aErr;
+            const n = Math.min(CH, audioBuf.length - off);
+            const data = new Float32Array(n * 2);
+            data.set(L.subarray(off, off + n), 0);
+            data.set(R.subarray(off, off + n), n);
+            const ad = new AudioData({
+              format: "f32-planar",
+              sampleRate: 44100,
+              numberOfFrames: n,
+              numberOfChannels: 2,
+              timestamp: Math.round((off / 44100) * 1e6),
+              data,
+            });
+            aEnc.encode(ad);
+            ad.close();
+          }
+          await aEnc.flush();
+        }
+
         muxer.finalize();
         const blob = new Blob([muxer.target.buffer], { type: "video/mp4" });
         if (!blob.size) throw new Error("Render menghasilkan file kosong — coba lagi.");
@@ -555,6 +660,10 @@ export default function VideoStudio({ listings = [], initialSlug = "" }) {
           <div className="rounded-2xl bg-pine-50 p-4 text-base font-bold text-ink-soft">
             {scenes.length} adegan · ± {Math.round(total)} detik · {fmt.w}×{fmt.h}
           </div>
+          <label className="flex items-center gap-3 text-lg font-bold text-ink">
+            <input type="checkbox" checked={music} onChange={(e) => setMusic(e.target.checked)} className="h-5 w-5 accent-pine-700" disabled={busy} />
+            Musik latar (original — bebas royalti, aman dari klaim hak cipta)
+          </label>
           <div className="flex flex-col gap-3 sm:flex-row">
             <button onClick={startPreview} disabled={busy} className="btn-outline flex-1 disabled:opacity-50">
               Pratinjau

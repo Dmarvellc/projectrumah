@@ -29,14 +29,21 @@ export default function DashboardShell({ brand, nav, children }) {
           </Link>
           <div className="px-2 pb-4 text-base font-bold text-pine-700">{brand}</div>
 
-          <nav className="flex-1 space-y-1.5">
-            {nav.map((n) => {
+          <nav className="flex-1 space-y-1.5 overflow-y-auto">
+            {nav.map((n, i) => {
+              if (n.heading) {
+                return (
+                  <div key={`h-${i}`} className="px-4 pb-1 pt-4 text-xs font-extrabold uppercase tracking-[0.14em] text-ink-faint">
+                    {n.heading}
+                  </div>
+                );
+              }
               const active = n.exact ? pathname === n.href : pathname.startsWith(n.href);
               return (
                 <Link
                   key={n.href}
                   href={n.href}
-                  className={`flex items-center gap-3.5 rounded-2xl px-4 py-3.5 text-base font-bold transition ${
+                  className={`flex items-center gap-3.5 rounded-2xl px-4 py-3 text-base font-bold transition ${
                     active ? "bg-pine-700 text-paper" : "text-ink-soft hover:bg-ink/[.05]"
                   }`}
                 >
@@ -59,7 +66,7 @@ export default function DashboardShell({ brand, nav, children }) {
         {/* MOBILE TOPBAR */}
         <div className="flex min-w-0 flex-1 flex-col">
           <div className="sticky top-0 z-30 flex items-center gap-1.5 overflow-x-auto border-b border-ink/10 bg-white/90 px-4 py-3 backdrop-blur lg:hidden">
-            {nav.map((n) => {
+            {nav.filter((n) => !n.heading).map((n) => {
               const active = n.exact ? pathname === n.href : pathname.startsWith(n.href);
               return (
                 <Link

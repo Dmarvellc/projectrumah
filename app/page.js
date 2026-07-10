@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import SearchBar from "@/components/SearchBar";
 import PropertyCard from "@/components/PropertyCard";
-import { TYPE_LABELS, TYPE_ICON } from "@/data";
+import { TYPE_LABELS, TYPE_ICON, SITE } from "@/data";
 import { allListings, allArticles } from "@/lib/store";
 import { formatDate } from "@/lib/utils";
 import { TYPE_ICON_COMPONENTS, IconShield, IconCheck, IconStar, IconArrow } from "@/components/icons";
@@ -75,6 +75,16 @@ export default function Home() {
         </div>
       </section>
 
+      {/* STATS BAND — kepercayaan lewat angka */}
+      <section className="container-x mt-14">
+        <div className="grid grid-cols-2 gap-4 rounded-[2.5rem] border border-ink/10 bg-white p-8 shadow-card sm:grid-cols-4 sm:p-10">
+          <Stat n={`${listings.length}+`} label="Listing terverifikasi" />
+          <Stat n={`${new Set(listings.map((p) => p.city)).size}`} label="Kota di Indonesia" />
+          <Stat n="100%" label="Legalitas terperiksa" />
+          <Stat n="< 5 mnt" label="Respons WhatsApp" />
+        </div>
+      </section>
+
       {/* FEATURED */}
       <Section title="Properti unggulan" href="/properti" linkLabel="Lihat semua">
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -113,6 +123,41 @@ export default function Home() {
         </div>
       </Section>
 
+      {/* TITIP JUAL — mesin akuisisi mandat */}
+      <section className="container-x mt-20 sm:mt-24">
+        <div className="grid overflow-hidden rounded-[2.5rem] bg-pine-800 md:grid-cols-2">
+          <div className="p-10 text-paper sm:p-14">
+            <h2 className="text-4xl font-extrabold leading-tight sm:text-5xl">Mau jual atau sewakan properti Anda?</h2>
+            <p className="mt-5 text-xl font-semibold leading-relaxed text-paper/85">
+              Titipkan pada kami: analisis harga berbasis data pembanding, foto & materi
+              pemasaran profesional, iklan di semua kanal, dan pendampingan sampai akad.
+            </p>
+            <ul className="mt-6 space-y-2.5 text-lg font-bold text-paper/90">
+              <li>✓ Rekomendasi harga jual berbasis data area</li>
+              <li>✓ Halaman properti + presentasi + video sosmed dalam 1 hari</li>
+              <li>✓ Tanpa biaya di depan — komisi hanya saat terjual</li>
+            </ul>
+            <a
+              href={`https://wa.me/${SITE.whatsapp}?text=${encodeURIComponent("Halo, saya ingin titip jual/sewa properti saya.")}`}
+              target="_blank"
+              rel="noreferrer"
+              className="btn-light mt-8 text-lg"
+            >
+              Konsultasi gratis via WhatsApp
+            </a>
+          </div>
+          <div className="relative hidden min-h-[380px] md:block">
+            <Image
+              src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=1200&q=80"
+              alt="Titip jual properti"
+              fill
+              sizes="50vw"
+              className="object-cover"
+            />
+          </div>
+        </div>
+      </section>
+
       {/* ARTICLES */}
       <Section title="Artikel & panduan" href="/artikel" linkLabel="Semua artikel">
         <div className="grid gap-6 md:grid-cols-3">
@@ -122,6 +167,15 @@ export default function Home() {
         </div>
       </Section>
     </>
+  );
+}
+
+function Stat({ n, label }) {
+  return (
+    <div className="text-center">
+      <div className="text-4xl font-extrabold text-pine-700 sm:text-5xl">{n}</div>
+      <div className="mt-1.5 text-base font-bold text-ink-soft sm:text-lg">{label}</div>
+    </div>
   );
 }
 

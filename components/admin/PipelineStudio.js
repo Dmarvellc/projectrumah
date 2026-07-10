@@ -20,10 +20,17 @@ const INITIAL = {
   location: "", cluster: "", address: "",
   price: "",
   landSize: "", buildingSize: "", floors: "", bedrooms: "", bathrooms: "", carports: "",
+  maidRooms: "", garage: "", ipl: "", roadWidth: "",
   yearBuilt: "", electricity: "", water: "", facing: "", furnished: "", condition: "",
   certificate: "SHM", imb: false,
+  facilities: [],
   extra: "",
 };
+
+const FACILITY_OPTIONS = [
+  "Kolam Renang", "Taman", "Gudang", "Kitchen Set", "Water Heater",
+  "AC", "CCTV", "Smart Home", "One Gate System", "Solar Panel",
+];
 
 // ---------- format harga: 2500000000 → "2.500.000.000" ----------
 const fmtID = (digits) => (digits ? Number(digits).toLocaleString("id-ID") : "");
@@ -326,6 +333,31 @@ export default function PipelineStudio() {
             <Num label="K. Tidur" k="bedrooms" form={form} set={set} />
             <Num label="K. Mandi" k="bathrooms" form={form} set={set} />
             <Num label="Carport" k="carports" form={form} set={set} />
+            <Num label="K. Pembantu" k="maidRooms" form={form} set={set} />
+            <Num label="Garasi" k="garage" form={form} set={set} />
+            <Field label="Row jalan">
+              <select value={form.roadWidth} onChange={(e) => set("roadWidth", e.target.value)} className="field">
+                <option value="">Pilih</option>
+                <option value="1">1 mobil</option><option value="2">2 mobil</option><option value="3">3+ mobil</option>
+              </select>
+            </Field>
+          </div>
+        </FormCard>
+
+        {/* FASILITAS */}
+        <FormCard icon={IconStar} title="Fasilitas" hint="Centang yang ada — ikut dianalisis AI & tampil di halaman, PPT, brosur">
+          <div className="grid grid-cols-2 gap-2.5">
+            {FACILITY_OPTIONS.map((f) => (
+              <label key={f} className={`flex cursor-pointer items-center gap-2.5 rounded-2xl border-2 px-4 py-3 text-base font-bold transition ${form.facilities.includes(f) ? "border-pine-700 bg-pine-50 text-ink" : "border-ink/10 text-ink-soft hover:border-ink/30"}`}>
+                <input
+                  type="checkbox"
+                  checked={form.facilities.includes(f)}
+                  onChange={(e) => set("facilities", e.target.checked ? [...form.facilities, f] : form.facilities.filter((x) => x !== f))}
+                  className="h-4 w-4 accent-pine-700"
+                />
+                {f}
+              </label>
+            ))}
           </div>
         </FormCard>
 
@@ -337,6 +369,9 @@ export default function PipelineStudio() {
             </Field>
             <Field label="Listrik (VA)">
               <input value={form.electricity} onChange={(e) => set("electricity", e.target.value)} className="field" placeholder="3500" />
+            </Field>
+            <Field label="IPL / bulan (Rp)">
+              <input inputMode="numeric" value={form.ipl ? Number(form.ipl).toLocaleString("id-ID") : ""} onChange={(e) => set("ipl", e.target.value.replace(/\D/g, ""))} className="field" placeholder="350.000" />
             </Field>
             <Field label="Air">
               <select value={form.water} onChange={(e) => set("water", e.target.value)} className="field">

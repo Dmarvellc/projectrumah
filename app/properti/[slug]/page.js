@@ -108,6 +108,20 @@ export default function PropertyDetail({ params }) {
             ))}
           </div>
 
+          {/* FASILITAS */}
+          {p.facilities?.length > 0 && (
+            <div className="mt-10">
+              <h2 className="text-3xl font-extrabold text-ink">Fasilitas</h2>
+              <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                {p.facilities.map((f) => (
+                  <div key={f} className="flex items-center gap-2.5 rounded-2xl bg-pine-50 px-4 py-3 text-base font-bold text-ink">
+                    <IconCheck size={20} className="shrink-0 text-pine-700" /> {f}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="mt-10">
             <h2 className="text-3xl font-extrabold text-ink">Tentang properti ini</h2>
             <p className="mt-4 whitespace-pre-line text-lg leading-[1.85] text-ink-soft">{p.description}</p>
