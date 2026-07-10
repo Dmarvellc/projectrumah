@@ -187,7 +187,15 @@ export default function PipelineStudio() {
         uploadedUrls,
         coverIndex: content.coverIndex ?? 0,
       });
-      assembled = { ...assembled, images: vis.gallery };
+      // caption ikut urutan galeri (cover pilihan AI pindah ke depan)
+      let caps = content.photoCaptions || [];
+      if (vis.usedUploads && caps.length) {
+        const ci = content.coverIndex ?? 0;
+        caps = [caps[ci], ...caps.filter((_, i) => i !== ci)].filter((c) => c !== undefined);
+      } else if (!vis.usedUploads) {
+        caps = []; // foto stok — caption AI tidak relevan
+      }
+      assembled = { ...assembled, images: vis.gallery, photoCaptions: caps };
       setCoverSvg(vis.coverSvg);
       setListing({ ...assembled });
       setStatus((s) => ({ ...s, images: "done" }));

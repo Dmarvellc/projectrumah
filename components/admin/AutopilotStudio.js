@@ -330,6 +330,12 @@ function ResultCard({ index, r }) {
         </div>
       </div>
 
+      {r.warning && (
+        <div className="mt-3 rounded-2xl border-2 border-red-300 bg-red-50 p-4 text-base font-bold text-red-700">
+          ⚠ {r.warning}
+        </div>
+      )}
+
       <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 rounded-xl bg-white/70 p-3 text-xs text-ink-soft sm:grid-cols-4">
         <Spec k="KT" v={l.bedrooms} />
         <Spec k="KM" v={l.bathrooms} />
