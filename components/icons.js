@@ -128,6 +128,9 @@ export const IconCalendar = (p) => (
 export const IconPrint = (p) => (
   <Svg {...p}><path d="M6 9V3h12v6" /><rect x="4" y="9" width="16" height="8" rx="1.5" /><path d="M7 17h10v4H7z" /><path d="M17 12.5h.01" /></Svg>
 );
+export const IconPlay = (p) => (
+  <Svg {...p}><rect x="3" y="5" width="18" height="14" rx="3" /><path d="m10.5 9.5 4.5 2.5-4.5 2.5v-5Z" fill="currentColor" /></Svg>
+);
 export const IconBolt = (p) => (
   <Svg {...p}><path d="M13 3 5 13h6l-1 8 8-10h-6l1-8Z" /></Svg>
 );

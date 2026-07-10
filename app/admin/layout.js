@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import DashboardShell from "@/components/DashboardShell";
-import { IconGrid, IconPlus, IconList, IconMega, IconInbox, IconBolt, IconUsers, IconArea, IconCalendar } from "@/components/icons";
+import { IconGrid, IconPlus, IconList, IconMega, IconInbox, IconBolt, IconUsers, IconArea, IconCalendar, IconPlay } from "@/components/icons";
 
 const NAV = [
   { href: "/admin", label: "Ringkasan", icon: IconGrid, exact: true },
@@ -13,6 +13,7 @@ const NAV = [
   { href: "/admin/cma", label: "Harga & Pasar", icon: IconArea },
   { href: "/admin/clients", label: "Klien", icon: IconUsers },
   { href: "/admin/marketing", label: "Marketing Kit", icon: IconMega },
+  { href: "/admin/video", label: "Video Sosmed", icon: IconPlay },
   { href: "/admin/leads", label: "Leads", icon: IconInbox },
 ];
 

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { IconWand, IconTrash, IconExternal, IconPrint } from "@/components/icons";
+import { IconWand, IconTrash, IconExternal, IconPrint, IconPlay } from "@/components/icons";
 import Link from "next/link";
 
 export default function ListingActions({ slug, canImprove = true }) {
@@ -41,6 +41,9 @@ export default function ListingActions({ slug, canImprove = true }) {
       </Link>
       <Link href={`/brosur/${slug}`} target="_blank" className="grid h-9 w-9 place-items-center rounded-xl text-ink-faint hover:bg-ink/[.05] hover:text-pine-700" title="Brosur (cetak/PDF)">
         <IconPrint size={18} />
+      </Link>
+      <Link href={`/admin/video?slug=${slug}`} className="grid h-9 w-9 place-items-center rounded-xl text-ink-faint hover:bg-ink/[.05] hover:text-pine-700" title="Video sosmed">
+        <IconPlay size={18} />
       </Link>
       {canImprove && (
         <button onClick={improve} disabled={busy} className="grid h-9 w-9 place-items-center rounded-xl text-ink-faint hover:bg-ink/[.05] hover:text-pine-700 disabled:opacity-50" title="Improve with AI">
