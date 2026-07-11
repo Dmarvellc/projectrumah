@@ -2,6 +2,7 @@ import Link from "next/link";
 import { stats, listJobs, listLeads, listClients, listTasks } from "@/lib/store";
 import { timeAgo } from "@/lib/utils";
 import { IconPlus, IconBolt, IconUsers, IconInbox, IconCalendar } from "@/components/icons";
+import StorageStatus from "@/components/admin/StorageStatus";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Ringkasan" };
@@ -23,6 +24,8 @@ export default function AdminHome() {
       <header className="mb-8">
         <h1 className="text-4xl font-extrabold text-ink">Ringkasan</h1>
       </header>
+
+      <StorageStatus />
 
       {/* STATS */}
       <div className="grid grid-cols-2 gap-5 xl:grid-cols-4">
