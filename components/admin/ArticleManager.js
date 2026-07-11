@@ -111,9 +111,8 @@ export default function ArticleManager({ initialSettings }) {
           </button>
         </div>
 
-        <p className="mt-4 rounded-lg bg-ink/[.03] p-3 text-xs text-ink-faint">
-          Untuk otomatis harian di produksi: jadwalkan <code className="font-mono">GET /api/cron/daily-article</code>
-          {" "}(mis. Vercel Cron) dengan header <code className="font-mono">Authorization: Bearer CRON_SECRET</code>.
+        <p className="mt-4 rounded-lg bg-ink/[.03] p-3 text-sm font-semibold text-ink-faint">
+          Artikel harian terbit otomatis setiap pagi dari antrean topik di atas.
         </p>
       </div>
 

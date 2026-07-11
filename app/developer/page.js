@@ -47,7 +47,7 @@ export default function DeveloperHome() {
             <li className="flex items-center justify-between rounded-2xl bg-paper px-5 py-4">
               AI
               <span className={process.env.ANTHROPIC_API_KEY ? "text-pine-700" : "text-red-700"}>
-                {process.env.ANTHROPIC_API_KEY ? "Tersambung" : "Offline"}
+                {process.env.ANTHROPIC_API_KEY ? "Tersambung" : "Belum aktif"}
               </span>
             </li>
           </ul>

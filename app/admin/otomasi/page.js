@@ -31,7 +31,7 @@ export default function OtomasiPage() {
                 <div className="min-w-0 flex-1">
                   <div className="truncate font-semibold text-ink">{j.title}</div>
                   <div className="text-xs text-ink-faint">
-                    {timeAgo(j.createdAt)} · {j.aiUsed ? "AI" : "Offline"}
+                    {timeAgo(j.createdAt)}
                   </div>
                 </div>
                 <Link href={j.result} target="_blank" className="shrink-0 text-xs font-semibold text-pine-700 hover:underline">

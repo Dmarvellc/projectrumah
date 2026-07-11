@@ -41,12 +41,12 @@ const SAND = "#B08A4F";
 const SAND_LT = "#E2CCA8";
 const MIST = "#C7D8CE";
 
-const FALLBACK_IMG = "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=1200&q=80";
-const proxied = (u) => (u?.startsWith("/") ? u : `/api/admin/img-proxy?url=${encodeURIComponent(u || FALLBACK_IMG)}`);
+// Tanpa foto → adegan latar bermerek (hijau pinus), BUKAN foto rumah palsu.
+const proxied = (u) => (!u ? null : u.startsWith("/") ? u : `/api/admin/img-proxy?url=${encodeURIComponent(u)}`);
 
 // ---------- konten: susun adegan dari data listing ----------
 function buildScenes(l) {
-  const imgs = l.images?.length ? l.images : [FALLBACK_IMG];
+  const imgs = l.images?.length ? l.images : [null];
   const scenes = [];
   scenes.push({ kind: "hook", img: imgs[0], dur: 3.0 });
   scenes.push({ kind: "price", img: imgs[1] || imgs[0], dur: 3.0 });
@@ -442,7 +442,7 @@ export default function VideoStudio({ listings = [], initialSlug = "" }) {
   async function prepare() {
     await document.fonts.ready;
     const urls = [...new Set(scenes.map((s) => s.img).filter(Boolean))];
-    const loaded = await Promise.all(urls.map((u2) => loadImage(proxied(u2))));
+    const loaded = await Promise.all(urls.map((u2) => (proxied(u2) ? loadImage(proxied(u2)) : Promise.resolve(null))));
     const imgsMap = {};
     urls.forEach((u2, i) => (imgsMap[u2] = loaded[i]));
     const { w, h } = FORMATS[format];

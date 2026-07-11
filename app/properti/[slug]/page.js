@@ -34,7 +34,7 @@ export default function PropertyDetail({ params }) {
   const p = getListing(params.slug);
   if (!p) notFound();
   const related = relatedListings(p);
-  const images = p.images?.length ? p.images : ["https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=1000&q=80"];
+  const images = p.images?.length ? p.images : []; // tanpa foto → blok "Foto menyusul", bukan foto palsu
 
   const specs = [
     p.bedrooms > 0 && { icon: IconBed, label: "Kamar Tidur", value: p.bedrooms },
@@ -81,7 +81,17 @@ export default function PropertyDetail({ params }) {
 
       <div className="grid gap-10 lg:grid-cols-[1.65fr_1fr]">
         <div>
-          <Gallery images={images} title={p.title} />
+          {images.length > 0 ? (
+            <Gallery images={images} title={p.title} />
+          ) : (
+            <div className="grid aspect-[16/9] w-full place-items-center rounded-3xl bg-pine-800">
+              <div className="text-center text-paper/80">
+                <IconPin size={48} className="mx-auto" />
+                <div className="mt-3 text-xl font-extrabold">Foto menyusul</div>
+                <div className="text-base font-semibold">Hubungi kami untuk foto & survei langsung</div>
+              </div>
+            </div>
+          )}
 
           <div className="mt-8">
             <div className="flex flex-wrap items-center gap-2">

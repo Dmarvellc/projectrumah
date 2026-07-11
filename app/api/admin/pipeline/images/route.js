@@ -3,21 +3,19 @@ import { suggestImages, buildCoverSvg } from "@/lib/images";
 
 export const runtime = "nodejs";
 
-// Galeri = foto asli yang diunggah penjual (uploadedUrls), dengan foto
-// pilihan AI (coverIndex) di urutan pertama. Foto stok HANYA dipakai
-// bila penjual tidak mengunggah foto sama sekali.
+// Galeri = HANYA foto asli yang diunggah penjual (uploadedUrls), dengan foto
+// pilihan AI (coverIndex) di urutan pertama. Tanpa foto → galeri kosong
+// (UI menampilkan "Foto menyusul") — tidak pernah foto stok/palsu.
 export async function POST(req) {
   try {
     const { listing = {}, uploadedUrls = [], coverIndex = 0 } = await req.json();
 
-    let gallery;
+    let gallery = [];
     let usedUploads = false;
     if (uploadedUrls.length) {
       const idx = coverIndex >= 0 && coverIndex < uploadedUrls.length ? coverIndex : 0;
       gallery = [uploadedUrls[idx], ...uploadedUrls.filter((_, i) => i !== idx)];
       usedUploads = true;
-    } else {
-      gallery = suggestImages(listing.type, 3);
     }
 
     const coverSvg = buildCoverSvg({ ...listing, images: gallery });

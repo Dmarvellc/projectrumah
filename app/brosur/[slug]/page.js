@@ -15,7 +15,7 @@ export default function BrosurPage({ params }) {
   const status = p.listing === "sewa" ? "DISEWAKAN" : "DIJUAL";
   const type = TYPE_LABELS[p.type] || "Properti";
   const where = [p.cluster, p.location].filter(Boolean).join(", ");
-  const img = p.images?.[0] || "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=1200&q=80";
+  const img = p.images?.[0] || null; // tanpa foto → blok bermerek, bukan foto palsu
   const gallery = (p.images || []).slice(1, 4);
   const ag = p.agent || {};
   const waNumber = "62" + String(ag.phone || SITE.phone).replace(/\D/g, "").replace(/^0/, "");
@@ -61,8 +61,17 @@ export default function BrosurPage({ params }) {
 
         {/* HERO */}
         <div className="relative">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={img} alt={p.title} className="h-[300px] w-full object-cover" />
+          {img ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={img} alt={p.title} className="h-[300px] w-full object-cover" />
+          ) : (
+            <div className="grid h-[300px] w-full place-items-center bg-pine-700 text-paper/85">
+              <div className="text-center">
+                <div className="text-2xl font-extrabold">Foto menyusul</div>
+                <div className="mt-1 text-base font-semibold">Hubungi kami untuk foto & jadwal survei</div>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="px-8 py-6">

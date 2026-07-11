@@ -239,7 +239,7 @@ export default function AutopilotStudio({ initialQueue = [] }) {
             <div>
               <h2 className="font-serif text-lg font-semibold text-ink">Antrean otomasi</h2>
               <p className="mt-1 text-sm text-ink-faint">
-                Diproses otomatis satu per satu oleh cron harian (<code className="rounded bg-ink/5 px-1">/api/cron/autopilot</code>), atau proses manual di sini.
+                Diproses otomatis setiap hari, satu per satu — atau proses langsung di sini.
               </p>
             </div>
             <span className="shrink-0 text-2xl font-extrabold text-pine-700">{queue.length}</span>
@@ -325,7 +325,7 @@ function ResultCard({ index, r }) {
         <div className="min-w-0 flex-1">
           <div className="font-serif text-base font-semibold text-ink">{r.title}</div>
           <div className="mt-0.5 text-xs text-ink-faint">
-            {l.location || "—"} · {r.status === "published" ? "Terbit" : "Draf"} · {r.aiUsed ? "AI" : "Offline"}
+            {l.location || "—"} · {r.status === "published" ? "Terbit" : "Draf"}
           </div>
         </div>
       </div>
