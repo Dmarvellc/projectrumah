@@ -11,6 +11,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Muxer, ArrayBufferTarget } from "mp4-muxer";
 import { formatPrice } from "@/lib/utils";
 import { TYPE_LABELS } from "@/data";
+import { staticMapTiles } from "@/lib/geo";
 import { IconBolt, IconCheck } from "@/components/icons";
 
 // Codec H.264 dari level rendah→tinggi; dipilih yang didukung untuk resolusi target.
@@ -207,6 +208,11 @@ export default function VideoStudio({ listings = [], initialSlug = "", brand = {
   const listing = useMemo(() => listings.find((l) => l.slug === slug) || listings[0], [listings, slug]);
   const scenes = useMemo(() => (listing ? buildScenes(listing) : []), [listing]);
   const total = useMemo(() => scenes.reduce((s, x) => s + x.dur, 0), [scenes]);
+  // Peta OSM statis untuk adegan lokasi (bila koordinat ada).
+  const mapData = useMemo(
+    () => (listing?.geo?.lat ? staticMapTiles(listing.geo.lat, listing.geo.lng, 15) : null),
+    [listing]
+  );
 
   const caption = useMemo(() => {
     if (!listing) return "";
@@ -244,7 +250,8 @@ export default function VideoStudio({ listings = [], initialSlug = "", brand = {
     const im = imgsMap[scene.img];
     const price = formatPrice(listing.price, listing.listing, listing.priceUnit);
     const where = [listing.cluster, listing.location].filter(Boolean).join(", ");
-    const M = 72 * u; // margin
+    const M = 78 * u; // margin tepi
+    const safeBottom = h - M * 1.5; // zona aman bawah — teks tak mepet tepi
 
     // latar
     if (scene.kind === "nearby") {
@@ -263,7 +270,7 @@ export default function VideoStudio({ listings = [], initialSlug = "", brand = {
     ctx.fillStyle = PAPER;
     ctx.fillText(BRAND_NAME, M, M + 30 * u);
 
-    const bottom = h - M;
+    const bottom = safeBottom;
 
     if (scene.kind === "hook") {
       const r1 = rise(sp, 0);
@@ -349,22 +356,35 @@ export default function VideoStudio({ listings = [], initialSlug = "", brand = {
 
     if (scene.kind === "point") {
       const spx = scene.sp || {};
+      // Ukur tinggi blok agar tersusun rapi dari bawah, tanpa tumpang tindih.
+      ctx.font = `800 ${64 * u}px "Nunito Sans", sans-serif`;
+      const pl = wrapText(ctx, spx.point, w - M * 2, 3);
+      ctx.font = `600 ${34 * u}px "Nunito Sans", sans-serif`;
+      const dl = spx.detail ? wrapText(ctx, spx.detail, w - M * 2, 3) : [];
+      const ebH = 44 * u, ebGap = 34 * u, plH = 80 * u, dGap = 30 * u, dlH = 50 * u;
+      const blockH = ebH + ebGap + pl.length * plH + (dl.length ? dGap + dl.length * dlH : 0);
+      let y = safeBottom - blockH;
+
       const r1 = rise(sp, 0);
       ctx.globalAlpha = r1.a;
       ctx.fillStyle = "#8FB59D";
       ctx.font = `800 ${32 * u}px "Nunito Sans", sans-serif`;
-      ctx.fillText((spx.aspect || "KEUNGGULAN").toUpperCase(), M, bottom - 330 * u + r1.dy);
+      ctx.fillText((spx.aspect || "KEUNGGULAN").toUpperCase(), M, y + ebH + r1.dy);
+      y += ebH + ebGap;
+
       const r2 = rise(sp, 0.2);
       ctx.globalAlpha = r2.a;
       ctx.fillStyle = PAPER;
-      ctx.font = `800 ${66 * u}px "Nunito Sans", sans-serif`;
-      wrapText(ctx, spx.point, w - M * 2, 3).forEach((ln, i) => ctx.fillText(ln, M, bottom - 240 * u + i * 78 * u + r2.dy));
-      if (spx.detail) {
+      ctx.font = `800 ${64 * u}px "Nunito Sans", sans-serif`;
+      pl.forEach((ln, i) => ctx.fillText(ln, M, y + 58 * u + i * plH + r2.dy));
+      y += pl.length * plH;
+
+      if (dl.length) {
         const r3 = rise(sp, 0.4);
         ctx.globalAlpha = r3.a;
         ctx.fillStyle = MIST;
         ctx.font = `600 ${34 * u}px "Nunito Sans", sans-serif`;
-        wrapText(ctx, spx.detail, w - M * 2, 2).forEach((ln, i) => ctx.fillText(ln, M, bottom - 10 * u + i * 46 * u + r3.dy - 40 * u));
+        dl.forEach((ln, i) => ctx.fillText(ln, M, y + dGap + 30 * u + i * dlH + r3.dy));
       }
       ctx.globalAlpha = 1;
     }
@@ -372,27 +392,78 @@ export default function VideoStudio({ listings = [], initialSlug = "", brand = {
     if (scene.kind === "nearby") {
       const r1 = rise(sp, 0);
       ctx.globalAlpha = r1.a;
+      // header
       ctx.fillStyle = SAND_LT;
       ctx.font = `800 ${34 * u}px "Nunito Sans", sans-serif`;
-      ctx.fillText("LOKASI STRATEGIS", M, M + 150 * u + r1.dy);
+      ctx.fillText("LOKASI & SEKITAR", M, M + 148 * u + r1.dy);
       ctx.fillStyle = PAPER;
-      ctx.font = `800 ${62 * u}px "Nunito Sans", sans-serif`;
-      wrapText(ctx, where, w - M * 2, 2).forEach((ln, i) => ctx.fillText(ln, M, M + 240 * u + i * 74 * u + r1.dy));
-      // baris tempat terdekat
-      scene.rows.forEach((n, i) => {
-        const rr2 = rise(sp, 0.25 + i * 0.12);
-        ctx.globalAlpha = rr2.a;
-        const y = M + 420 * u + i * 120 * u + rr2.dy;
-        rr(ctx, M, y, w - M * 2, 96 * u, 22 * u);
-        ctx.fillStyle = "rgba(247,244,238,0.1)";
+      ctx.font = `800 ${60 * u}px "Nunito Sans", sans-serif`;
+      const locLines = wrapText(ctx, where, w - M * 2, 2);
+      locLines.forEach((ln, i) => ctx.fillText(ln, M, M + 232 * u + i * 70 * u + r1.dy));
+      let cursorY = M + 232 * u + locLines.length * 70 * u + 46 * u;
+
+      // baris tempat terdekat (maks 3, tinggi terukur)
+      const rows = (scene.rows || []).slice(0, 3);
+      const rowH = 118 * u, rowGap = 18 * u;
+      const rowsBlock = rows.length * (rowH + rowGap);
+
+      // PETA statis OSM — persegi, di tengah, sisakan ruang untuk daftar
+      if (mapData) {
+        const avail = safeBottom - cursorY - rowsBlock - 40 * u;
+        const mapSize = Math.max(260 * u, Math.min(w - M * 2, avail));
+        const mapX = (w - mapSize) / 2;
+        const cell = mapSize / 2;
+        ctx.save();
+        rr(ctx, mapX, cursorY, mapSize, mapSize, 30 * u);
+        ctx.clip();
+        mapData.tiles.forEach((t) => {
+          const tim = imgsMap[t.url];
+          if (tim) ctx.drawImage(tim, mapX + t.col * cell, cursorY + t.row * cell, cell, cell);
+          else { ctx.fillStyle = "#dbe4dd"; ctx.fillRect(mapX + t.col * cell, cursorY + t.row * cell, cell, cell); }
+        });
+        ctx.restore();
+        // penanda titik properti
+        const mx = mapX + mapData.marker.fx * mapSize;
+        const my = cursorY + mapData.marker.fy * mapSize;
+        ctx.beginPath();
+        ctx.arc(mx, my, 17 * u, 0, Math.PI * 2);
+        ctx.fillStyle = PINE;
         ctx.fill();
+        ctx.lineWidth = 7 * u;
+        ctx.strokeStyle = PAPER;
+        ctx.stroke();
+        // bingkai
+        rr(ctx, mapX, cursorY, mapSize, mapSize, 30 * u);
+        ctx.lineWidth = 3 * u;
+        ctx.strokeStyle = "rgba(247,244,238,0.55)";
+        ctx.stroke();
+        cursorY += mapSize + 44 * u;
+      }
+
+      // daftar tempat terdekat
+      rows.forEach((n, i) => {
+        const rr2 = rise(sp, 0.3 + i * 0.12);
+        ctx.globalAlpha = rr2.a;
+        const y = cursorY + i * (rowH + rowGap) + rr2.dy;
+        rr(ctx, M, y, w - M * 2, rowH, 24 * u);
+        ctx.fillStyle = "rgba(247,244,238,0.12)";
+        ctx.fill();
+        // nama
         ctx.fillStyle = PAPER;
-        ctx.font = `800 ${36 * u}px "Nunito Sans", sans-serif`;
-        ctx.fillText(clipLine(ctx, n.name, w - M * 2 - 260 * u), M + 30 * u, y + 62 * u);
+        ctx.font = `800 ${37 * u}px "Nunito Sans", sans-serif`;
+        ctx.fillText(clipLine(ctx, n.name, w - M * 2 - 300 * u), M + 34 * u, y + 52 * u);
+        // kategori
+        if (n.category) {
+          ctx.fillStyle = MIST;
+          ctx.font = `700 ${28 * u}px "Nunito Sans", sans-serif`;
+          ctx.fillText(String(n.category), M + 34 * u, y + 94 * u);
+        }
+        // menit
         if (n.minutes) {
           ctx.fillStyle = SAND_LT;
+          ctx.font = `800 ${40 * u}px "Nunito Sans", sans-serif`;
           ctx.textAlign = "right";
-          ctx.fillText(`${n.minutes} mnt`, w - M - 30 * u, y + 62 * u);
+          ctx.fillText(`${n.minutes} mnt`, w - M - 34 * u, y + 72 * u);
           ctx.textAlign = "left";
         }
       });
@@ -442,7 +513,8 @@ export default function VideoStudio({ listings = [], initialSlug = "", brand = {
   // ---------- muat foto & siapkan kanvas ----------
   async function prepare() {
     await document.fonts.ready;
-    const urls = [...new Set(scenes.map((s) => s.img).filter(Boolean))];
+    const tileUrls = mapData ? mapData.tiles.map((t) => t.url) : [];
+    const urls = [...new Set([...scenes.map((s) => s.img).filter(Boolean), ...tileUrls])];
     const loaded = await Promise.all(urls.map((u2) => (proxied(u2) ? loadImage(proxied(u2)) : Promise.resolve(null))));
     const imgsMap = {};
     urls.forEach((u2, i) => (imgsMap[u2] = loaded[i]));

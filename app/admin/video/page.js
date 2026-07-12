@@ -21,6 +21,7 @@ export default function VideoPage({ searchParams }) {
     landSize: l.landSize || 0,
     buildingSize: l.buildingSize || 0,
     certificate: l.certificate || "",
+    geo: l.geo?.lat ? { lat: l.geo.lat, lng: l.geo.lng } : null,
     images: l.images || [],
     photoCaptions: l.photoCaptions || [],
     sellingPoints: l.sellingPoints || [],

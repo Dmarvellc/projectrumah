@@ -29,10 +29,12 @@ export async function GET(req) {
 
     // Backfill listing lama: hitung titik peta & analisis kawasan sekali, lalu simpan.
     if (!listing.geo || !listing.locationInsight) {
-      const [geo, locationInsight] = await Promise.all([
-        listing.geo || (listing.lat && listing.lng ? { lat: listing.lat, lng: listing.lng } : geocode([listing.cluster, listing.location].filter(Boolean).join(", "))),
-        listing.locationInsight || generateLocationInsight({ location: listing.location, type: listing.type, listing: listing.listing }),
-      ]);
+      const geo =
+        listing.geo ||
+        (listing.lat && listing.lng ? { lat: listing.lat, lng: listing.lng } : await geocode([listing.cluster, listing.location].filter(Boolean).join(", ")));
+      const locationInsight =
+        listing.locationInsight ||
+        (await generateLocationInsight({ location: listing.location, type: listing.type, listing: listing.listing, lat: geo?.lat, lng: geo?.lng }));
       listing = { ...listing, geo: geo ? { lat: geo.lat, lng: geo.lng } : null, locationInsight };
       if (listing.source !== "seed") saveListing(listing);
     }

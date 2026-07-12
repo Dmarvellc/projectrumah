@@ -16,10 +16,15 @@ export async function POST(req) {
     // Titik peta: pakai pin yang digeser manual di form bila ada; kalau tidak, geocode.
     const locationFull = [listing.cluster, listing.location].filter(Boolean).join(", ");
     const manualGeo = listing.geo?.lat && listing.geo?.lng ? listing.geo : null;
-    const [geo, locationInsight] = await Promise.all([
-      manualGeo || geocode(locationFull || listing.location),
-      generateLocationInsight({ location: locationFull || listing.location, type: listing.type, listing: listing.listing }),
-    ]);
+    // Geocode DULU agar analisis lokasi bisa deteksi tempat nyata dari koordinat.
+    const geo = manualGeo || (await geocode(locationFull || listing.location));
+    const locationInsight = await generateLocationInsight({
+      location: locationFull || listing.location,
+      type: listing.type,
+      listing: listing.listing,
+      lat: geo?.lat,
+      lng: geo?.lng,
+    });
 
     const record = saveListing({
       title: listing.title,
