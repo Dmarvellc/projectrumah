@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { saveListing, addJob } from "@/lib/store";
+import { saveListing, addJob, getBrand, brandAgent } from "@/lib/store";
 import { geocode } from "@/lib/geo";
 import { generateLocationInsight } from "@/lib/ai";
 
@@ -63,13 +63,8 @@ export async function POST(req) {
       images: Array.isArray(listing.images) && listing.images.length ? listing.images : [],
       geo: geo ? { lat: geo.lat, lng: geo.lng } : null,
       locationInsight,
-      agent: listing.agent || {
-        name: "RumahPlus Curated",
-        company: "RumahPlus",
-        phone: "0812-0000-0000",
-        verified: true,
-        rating: 4.8,
-      },
+      brandName: getBrand().brandName,
+      agent: listing.agent || brandAgent(),
       marketing,
       status: "published",
     });

@@ -10,7 +10,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Muxer, ArrayBufferTarget } from "mp4-muxer";
 import { formatPrice } from "@/lib/utils";
-import { TYPE_LABELS, SITE } from "@/data";
+import { TYPE_LABELS } from "@/data";
 import { IconBolt, IconCheck } from "@/components/icons";
 
 // Codec H.264 dari level rendah→tinggi; dipilih yang didukung untuk resolusi target.
@@ -187,7 +187,9 @@ function rise(p, delay = 0) {
   return { a: easeOut(t), dy: (1 - easeOut(t)) * 46 };
 }
 
-export default function VideoStudio({ listings = [], initialSlug = "" }) {
+export default function VideoStudio({ listings = [], initialSlug = "", brand = {} }) {
+  const BRAND_NAME = brand.brandName || "RumahPlus";
+  const BRAND_PHONE = brand.agentPhone || "";
   const canvasRef = useRef(null);
   const rafRef = useRef(0);
   const [slug, setSlug] = useState(
@@ -212,8 +214,9 @@ export default function VideoStudio({ listings = [], initialSlug = "" }) {
       return `${listing.marketing.instagram}\n\n${(listing.marketing.hashtags || []).map((h) => "#" + h).join(" ")}`;
     }
     const price = formatPrice(listing.price, listing.listing, listing.priceUnit);
-    return `${listing.listing === "sewa" ? "DISEWAKAN" : "DIJUAL"} — ${listing.title}\n📍 ${[listing.cluster, listing.location].filter(Boolean).join(", ")}\n💰 ${price}\n\nInfo & survei: ${listing.agent?.phone || SITE.phone}\n\n#properti #rumahdijual #${(listing.city || "indonesia").toLowerCase().replace(/\s+/g, "")}`;
-  }, [listing]);
+    const phone = listing.agent?.phone || BRAND_PHONE;
+    return `${listing.listing === "sewa" ? "DISEWAKAN" : "DIJUAL"} — ${listing.title}\n📍 ${[listing.cluster, listing.location].filter(Boolean).join(", ")}\n💰 ${price}${phone ? `\n\nInfo & survei: ${phone}` : ""}\n\n#properti #rumahdijual #${(listing.city || "indonesia").toLowerCase().replace(/\s+/g, "")}`;
+  }, [listing, BRAND_PHONE]);
 
   useEffect(() => stopAll, []); // bersihkan saat unmount
   function stopAll() {
@@ -258,10 +261,7 @@ export default function VideoStudio({ listings = [], initialSlug = "" }) {
     ctx.textBaseline = "alphabetic";
     ctx.font = `800 ${44 * u}px "Nunito Sans", sans-serif`;
     ctx.fillStyle = PAPER;
-    ctx.fillText("Rumah", M, M + 30 * u);
-    const rw = ctx.measureText("Rumah").width;
-    ctx.fillStyle = "#8FB59D";
-    ctx.fillText("Plus", M + rw, M + 30 * u);
+    ctx.fillText(BRAND_NAME, M, M + 30 * u);
 
     const bottom = h - M;
 
@@ -412,10 +412,11 @@ export default function VideoStudio({ listings = [], initialSlug = "" }) {
       ctx.globalAlpha = r2.a;
       ctx.fillStyle = SAND_LT;
       ctx.font = `800 ${52 * u}px "Nunito Sans", sans-serif`;
-      ctx.fillText(ag.phone || SITE.phone, M, bottom - 120 * u + r2.dy);
+      const ctaPhone = ag.phone || BRAND_PHONE;
+      if (ctaPhone) ctx.fillText(ctaPhone, M, bottom - 120 * u + r2.dy);
       ctx.fillStyle = MIST;
       ctx.font = `700 ${34 * u}px "Nunito Sans", sans-serif`;
-      ctx.fillText(clipLine(ctx, `${SITE.url.replace(/^https?:\/\//, "")}/properti/${listing.slug}`, w - M * 2), M, bottom - 40 * u + r2.dy);
+      ctx.fillText(clipLine(ctx, ag.company || BRAND_NAME, w - M * 2), M, bottom - 40 * u + r2.dy);
       ctx.globalAlpha = 1;
     }
 

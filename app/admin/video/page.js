@@ -1,5 +1,5 @@
 import VideoStudio from "@/components/admin/VideoStudio";
-import { allListings } from "@/lib/store";
+import { allListings, getBrand } from "@/lib/store";
 
 export const metadata = { title: "Video Sosmed" };
 export const dynamic = "force-dynamic";
@@ -38,7 +38,7 @@ export default function VideoPage({ searchParams }) {
           Konten tersusun seperti iklan properti: hook, harga, galeri, selling point, lokasi, CTA.
         </p>
       </header>
-      <VideoStudio listings={listings} initialSlug={searchParams?.slug || ""} />
+      <VideoStudio listings={listings} initialSlug={searchParams?.slug || ""} brand={getBrand()} />
     </div>
   );
 }

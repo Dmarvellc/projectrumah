@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { suggestImages, buildCoverSvg } from "@/lib/images";
+import { getBrand } from "@/lib/store";
 
 export const runtime = "nodejs";
 
@@ -18,7 +19,7 @@ export async function POST(req) {
       usedUploads = true;
     }
 
-    const coverSvg = buildCoverSvg({ ...listing, images: gallery });
+    const coverSvg = buildCoverSvg({ ...listing, images: gallery, brandName: getBrand().brandName });
     return NextResponse.json({ gallery, coverSvg, usedUploads });
   } catch (err) {
     return NextResponse.json({ error: String(err?.message || err) }, { status: 500 });

@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import DashboardShell from "@/components/DashboardShell";
-import { IconGrid, IconPlus, IconList, IconMega, IconInbox, IconBolt, IconUsers, IconArea, IconCalendar, IconPlay } from "@/components/icons";
+import { IconGrid, IconPlus, IconList, IconMega, IconInbox, IconBolt, IconUsers, IconArea, IconCalendar, IconPlay, IconStar } from "@/components/icons";
 
 // Alur kerja agen: HARI INI (respons & janji) → LISTING (produksi) → MARKETING (distribusi)
 const NAV = [
@@ -19,6 +19,8 @@ const NAV = [
   { heading: "Marketing" },
   { href: "/admin/marketing", label: "Marketing Kit", icon: IconMega },
   { href: "/admin/video", label: "Video Sosmed", icon: IconPlay },
+  { heading: "Pengaturan" },
+  { href: "/admin/brand", label: "Brand & Profil", icon: IconStar },
 ];
 
 export default function AdminLayout({ children }) {

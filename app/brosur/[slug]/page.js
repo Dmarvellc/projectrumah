@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import PrintButton from "@/components/PrintButton";
-import { getListing } from "@/lib/store";
-import { TYPE_LABELS, SITE } from "@/data";
+import { getListing, getBrand } from "@/lib/store";
+import { TYPE_LABELS } from "@/data";
 import { formatPrice } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -17,8 +17,13 @@ export default function BrosurPage({ params }) {
   const where = [p.cluster, p.location].filter(Boolean).join(", ");
   const img = p.images?.[0] || null; // tanpa foto → blok bermerek, bukan foto palsu
   const gallery = (p.images || []).slice(1, 4);
+  const brand = getBrand();
+  const brandName = p.brandName || brand.brandName;
   const ag = p.agent || {};
-  const waNumber = "62" + String(ag.phone || SITE.phone).replace(/\D/g, "").replace(/^0/, "");
+  const contactName = ag.name || brand.agentName || brandName;
+  const contactCompany = ag.company || brand.agentCompany || brandName;
+  const contactPhone = ag.phone || brand.agentPhone || "";
+  const waNumber = "62" + String(contactPhone).replace(/\D/g, "").replace(/^0/, "");
 
   const specs = [
     p.bedrooms > 0 && ["Kamar Tidur", p.bedrooms],
@@ -55,7 +60,7 @@ export default function BrosurPage({ params }) {
       <div className="mx-auto max-w-[820px] overflow-hidden rounded-3xl bg-white shadow-card print:rounded-none print:shadow-none">
         {/* HEADER */}
         <div className="flex items-center justify-between bg-pine-800 px-8 py-5 text-paper">
-          <div className="text-2xl font-extrabold">Rumah<span className="text-pine-300">Plus</span></div>
+          <div className="text-2xl font-extrabold">{brandName}</div>
           <div className="rounded-xl bg-sand-400 px-4 py-1.5 text-base font-extrabold tracking-wide text-ink">{status}</div>
         </div>
 
@@ -141,12 +146,18 @@ export default function BrosurPage({ params }) {
         {/* KONTAK */}
         <div className="mt-2 flex items-center justify-between bg-ink px-8 py-5 text-paper">
           <div>
-            <div className="text-xl font-extrabold">{ag.name || SITE.name}</div>
-            <div className="text-base font-semibold text-paper/80">{ag.company || "RumahPlus Curated"}</div>
+            <div className="text-xl font-extrabold">{contactName}</div>
+            <div className="text-base font-semibold text-paper/80">{contactCompany}</div>
           </div>
           <div className="text-right">
-            <div className="text-xl font-extrabold text-sand-300">{ag.phone || SITE.phone}</div>
-            <div className="text-base font-semibold text-paper/80">wa.me/{waNumber}</div>
+            {contactPhone ? (
+              <>
+                <div className="text-xl font-extrabold text-sand-300">{contactPhone}</div>
+                <div className="text-base font-semibold text-paper/80">wa.me/{waNumber}</div>
+              </>
+            ) : (
+              <div className="text-base font-semibold text-paper/70">Atur nomor di Brand & Profil</div>
+            )}
           </div>
         </div>
       </div>
