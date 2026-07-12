@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { SITE } from "@/data";
+import { siteContact } from "@/lib/store";
 import { IconShield, IconCheck, IconStar, IconPhone, IconChat, IconPin } from "@/components/icons";
 
 export const metadata = {
@@ -10,6 +11,7 @@ export const metadata = {
 };
 
 export default function TentangPage() {
+  const contact = siteContact();
   return (
     <div className="pb-8">
       <section className="bg-pine-800 text-paper">
@@ -57,12 +59,12 @@ export default function TentangPage() {
           <div className="rounded-2xl bg-pine-50 p-8">
             <h3 className="font-serif text-xl font-semibold text-ink">Hubungi kami</h3>
             <ul className="mt-5 space-y-4 text-ink-soft">
-              <li className="flex items-center gap-3"><IconPhone size={18} className="text-pine-600" /> {SITE.phone}</li>
-              <li className="flex items-center gap-3"><IconChat size={18} className="text-pine-600" /> {SITE.email}</li>
+              <li className="flex items-center gap-3"><IconPhone size={18} className="text-pine-600" /> {contact.phone}</li>
+              <li className="flex items-center gap-3"><IconChat size={18} className="text-pine-600" /> {contact.email}</li>
               <li className="flex items-start gap-3"><IconPin size={18} className="mt-0.5 text-pine-600" /> {SITE.address}</li>
             </ul>
             <div className="mt-6 flex flex-wrap gap-3">
-              <a href={`tel:${SITE.phoneRaw}`} className="btn-primary">Telepon kami</a>
+              <a href={`tel:${contact.phoneRaw}`} className="btn-primary">Telepon kami</a>
               <Link href="/properti" className="btn-outline">Lihat properti</Link>
             </div>
           </div>

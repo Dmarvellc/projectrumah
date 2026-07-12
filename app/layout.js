@@ -2,6 +2,7 @@ import "./globals.css";
 import { Nunito_Sans } from "next/font/google";
 import { SiteHeader, SiteFooter, WaFloat } from "@/components/SiteChrome";
 import { SITE } from "@/data";
+import { siteContact } from "@/lib/store";
 
 // Satu keluarga huruf untuk seluruh situs: Nunito Sans — tegas & bersih.
 // var --font-serif tetap diisi Nunito agar semua komponen lama ikut berubah.
@@ -41,16 +42,17 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }) {
+  const contact = siteContact();
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
       {
         "@type": "Organization",
         "@id": `${SITE.url}/#organization`,
-        name: SITE.name,
+        name: contact.brandName || SITE.name,
         url: SITE.url,
-        telephone: SITE.phone,
-        email: SITE.email,
+        telephone: contact.phone,
+        email: contact.email,
         address: {
           "@type": "PostalAddress",
           streetAddress: SITE.address,
@@ -80,10 +82,10 @@ export default function RootLayout({ children }) {
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-        <SiteHeader />
+        <SiteHeader contact={contact} />
         <main className="flex-1">{children}</main>
-        <SiteFooter />
-        <WaFloat />
+        <SiteFooter contact={contact} />
+        <WaFloat contact={contact} />
       </body>
     </html>
   );

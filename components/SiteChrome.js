@@ -5,25 +5,29 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { SITE } from "@/data";
 
-export function SiteHeader() {
+const HIDDEN = ["/admin", "/marketing", "/developer", "/masuk", "/daftar", "/brosur"];
+
+export function SiteHeader({ contact }) {
   const pathname = usePathname();
-  if (["/admin", "/marketing", "/developer", "/masuk", "/daftar", "/brosur"].some((p) => pathname?.startsWith(p))) return null;
-  return <Header />;
+  if (HIDDEN.some((p) => pathname?.startsWith(p))) return null;
+  return <Header contact={contact} />;
 }
 
-export function SiteFooter() {
+export function SiteFooter({ contact }) {
   const pathname = usePathname();
-  if (["/admin", "/marketing", "/developer", "/masuk", "/daftar", "/brosur"].some((p) => pathname?.startsWith(p))) return null;
-  return <Footer />;
+  if (HIDDEN.some((p) => pathname?.startsWith(p))) return null;
+  return <Footer contact={contact} />;
 }
 
 // Tombol WhatsApp mengambang — standar portal properti untuk respons cepat.
-export function WaFloat() {
+export function WaFloat({ contact }) {
   const pathname = usePathname();
-  if (["/admin", "/marketing", "/developer", "/masuk", "/daftar", "/brosur"].some((p) => pathname?.startsWith(p))) return null;
+  if (HIDDEN.some((p) => pathname?.startsWith(p))) return null;
+  const wa = contact?.whatsapp || SITE.whatsapp;
+  const brand = contact?.brandName || SITE.name;
   return (
     <a
-      href={`https://wa.me/${SITE.whatsapp}?text=${encodeURIComponent("Halo RumahPlus, saya ingin bertanya tentang properti.")}`}
+      href={`https://wa.me/${wa}?text=${encodeURIComponent(`Halo ${brand}, saya ingin bertanya tentang properti.`)}`}
       target="_blank"
       rel="noreferrer"
       aria-label="Chat WhatsApp"

@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { SITE } from "@/data";
 
-export default function Footer() {
+export default function Footer({ contact }) {
+  const phone = contact?.phone || SITE.phone;
+  const phoneRaw = contact?.phoneRaw || SITE.phoneRaw;
+  const email = contact?.email || SITE.email;
   return (
     <footer className="mt-24 bg-pine-900 text-pine-100">
       <div className="container-x grid gap-10 py-16 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
@@ -29,7 +32,7 @@ export default function Footer() {
           links={[
             { href: "/tentang", label: "Tentang Kami" },
             { href: "/artikel", label: "Artikel & Panduan" },
-            { href: `tel:${SITE.phoneRaw}`, label: "Hubungi Kami" },
+            { href: `tel:${phoneRaw}`, label: "Hubungi Kami" },
           ]}
         />
         <div>
@@ -37,8 +40,8 @@ export default function Footer() {
             Kontak
           </h4>
           <ul className="mt-4 space-y-2.5 text-base font-semibold text-pine-200/90">
-            <li>{SITE.phone}</li>
-            <li>{SITE.email}</li>
+            <li>{phone}</li>
+            <li>{email}</li>
             <li className="leading-relaxed">{SITE.address}</li>
           </ul>
         </div>

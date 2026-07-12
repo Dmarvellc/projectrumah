@@ -13,8 +13,10 @@ const NAV = [
   { href: "/tentang", label: "Tentang" },
 ];
 
-export default function Header() {
+export default function Header({ contact }) {
   const [open, setOpen] = useState(false);
+  const phone = contact?.phone || SITE.phone;
+  const phoneRaw = contact?.phoneRaw || SITE.phoneRaw;
 
   return (
     <header className="sticky top-0 z-40 border-b border-ink/10 bg-paper/85 backdrop-blur">
@@ -41,8 +43,8 @@ export default function Header() {
         </nav>
 
         <div className="hidden items-center gap-3 lg:flex">
-          <a href={`tel:${SITE.phoneRaw}`} className="btn-outline py-3">
-            <IconPhone size={20} /> {SITE.phone}
+          <a href={`tel:${phoneRaw}`} className="btn-outline py-3">
+            <IconPhone size={20} /> {phone}
           </a>
         </div>
 
@@ -68,8 +70,8 @@ export default function Header() {
                 {n.label}
               </Link>
             ))}
-            <a href={`tel:${SITE.phoneRaw}`} className="btn-primary mt-2">
-              <IconPhone size={16} /> Hubungi {SITE.phone}
+            <a href={`tel:${phoneRaw}`} className="btn-primary mt-2">
+              <IconPhone size={16} /> Hubungi {phone}
             </a>
           </div>
         </div>

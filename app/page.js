@@ -3,7 +3,7 @@ import Image from "next/image";
 import SearchBar from "@/components/SearchBar";
 import PropertyCard from "@/components/PropertyCard";
 import { TYPE_LABELS, TYPE_ICON, SITE } from "@/data";
-import { allListings, allArticles } from "@/lib/store";
+import { allListings, allArticles, siteContact } from "@/lib/store";
 import { formatDate } from "@/lib/utils";
 import { TYPE_ICON_COMPONENTS, IconShield, IconCheck, IconStar, IconArrow } from "@/components/icons";
 
@@ -12,6 +12,7 @@ export const dynamic = "force-dynamic";
 export default function Home() {
   const listings = allListings({ publishedOnly: true });
   const articles = allArticles({ publishedOnly: true });
+  const contact = siteContact();
   const featured = listings.filter((p) => p.featured);
   const featuredList = featured.length >= 3 ? featured : listings;
   const newest = [...listings].sort((a, b) => (b.posted || "").localeCompare(a.posted || "")).slice(0, 8);
@@ -138,7 +139,7 @@ export default function Home() {
               <li>✓ Tanpa biaya di depan — komisi hanya saat terjual</li>
             </ul>
             <a
-              href={`https://wa.me/${SITE.whatsapp}?text=${encodeURIComponent("Halo, saya ingin titip jual/sewa properti saya.")}`}
+              href={`https://wa.me/${contact.whatsapp}?text=${encodeURIComponent("Halo, saya ingin titip jual/sewa properti saya.")}`}
               target="_blank"
               rel="noreferrer"
               className="btn-light mt-8 text-lg"
