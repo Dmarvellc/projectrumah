@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getListing, saveListing } from "@/lib/store";
+import { getListing, saveListing, refreshDb } from "@/lib/store";
 import { generateListing } from "@/lib/ai";
 
 export const runtime = "nodejs";
@@ -9,6 +9,7 @@ export const maxDuration = 60;
 // untuk listing yang sudah ada (hanya listing buatan admin yang bisa disimpan).
 export async function POST(req) {
   try {
+    await refreshDb();
     const { slug } = await req.json();
     const p = getListing(slug);
     if (!p) return NextResponse.json({ error: "Listing tidak ditemukan" }, { status: 404 });

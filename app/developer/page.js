@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { stats, listUsers, listJobs, getSettings } from "@/lib/store";
+import { blobDbEnabled } from "@/lib/db-blob";
 import { timeAgo } from "@/lib/utils";
 
 export const metadata = { title: "Ringkasan" };
@@ -30,6 +31,12 @@ export default function DeveloperHome() {
         <section className="card p-8">
           <h2 className="text-2xl font-extrabold text-ink">Status otomasi</h2>
           <ul className="mt-5 space-y-4 text-lg font-bold text-ink">
+            <li className="flex items-center justify-between rounded-2xl bg-paper px-5 py-4">
+              Database
+              <span className={blobDbEnabled() ? "text-pine-700" : "text-red-700"}>
+                {blobDbEnabled() ? "Tersambung" : "Belum aktif"}
+              </span>
+            </li>
             <li className="flex items-center justify-between rounded-2xl bg-paper px-5 py-4">
               Artikel harian
               <span className={daily.enabled !== false ? "text-pine-700" : "text-red-700"}>

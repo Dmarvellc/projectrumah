@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getListing, saveListing, deleteListing } from "@/lib/store";
+import { getListing, saveListing, deleteListing, refreshDb } from "@/lib/store";
 import { geocode } from "@/lib/geo";
 
 export const runtime = "nodejs";
@@ -11,6 +11,7 @@ const NUM = ["price", "bedrooms", "bathrooms", "carports", "landSize", "building
 // salinan admin yang bisa diedit; aslinya disembunyikan agar tak dobel.
 export async function POST(req) {
   try {
+    await refreshDb();
     const { slug, patch = {} } = await req.json();
     const existing = getListing(slug);
     if (!existing) return NextResponse.json({ error: "Listing tidak ditemukan" }, { status: 404 });

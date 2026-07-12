@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { listTasks, addTask, updateTask, deleteTask } from "@/lib/store";
+import { listTasks, addTask, updateTask, deleteTask, refreshDb } from "@/lib/store";
 
 export const runtime = "nodejs";
 
@@ -10,6 +10,7 @@ export async function GET() {
 // POST { task }
 export async function POST(req) {
   try {
+    await refreshDb();
     const { task = {} } = await req.json();
     if (!String(task.title || "").trim()) {
       return NextResponse.json({ error: "Judul tugas wajib" }, { status: 400 });
@@ -32,6 +33,7 @@ export async function POST(req) {
 // PATCH { id, ...patch }  (mis. { id, done: true })
 export async function PATCH(req) {
   try {
+    await refreshDb();
     const { id, ...patch } = await req.json();
     const record = updateTask(id, patch);
     if (!record) return NextResponse.json({ error: "Tugas tidak ditemukan" }, { status: 404 });
@@ -44,6 +46,7 @@ export async function PATCH(req) {
 // DELETE { id }
 export async function DELETE(req) {
   try {
+    await refreshDb();
     const { id } = await req.json();
     deleteTask(id);
     return NextResponse.json({ ok: true, tasks: listTasks() });

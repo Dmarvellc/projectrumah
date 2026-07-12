@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getBrand, updateBrand } from "@/lib/store";
+import { getBrand, updateBrand, refreshDb } from "@/lib/store";
 
 export const runtime = "nodejs";
 
@@ -10,6 +10,7 @@ export async function GET() {
 // POST { brand } — simpan profil merek/agen.
 export async function POST(req) {
   try {
+    await refreshDb();
     const { brand = {} } = await req.json();
     const clean = {
       brandName: String(brand.brandName || "").trim() || "RumahPlus",

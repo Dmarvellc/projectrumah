@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { listClients, addClient, updateClient, deleteClient } from "@/lib/store";
+import { listClients, addClient, updateClient, deleteClient, refreshDb } from "@/lib/store";
 
 export const runtime = "nodejs";
 
@@ -10,6 +10,7 @@ export async function GET() {
 // POST { client } — tambah klien (bisa dari konversi lead)
 export async function POST(req) {
   try {
+    await refreshDb();
     const { client = {} } = await req.json();
     if (!String(client.name || "").trim()) {
       return NextResponse.json({ error: "Nama klien wajib" }, { status: 400 });
@@ -35,6 +36,7 @@ export async function POST(req) {
 // PATCH { id, ...patch } — update stage/catatan/data
 export async function PATCH(req) {
   try {
+    await refreshDb();
     const { id, ...patch } = await req.json();
     const record = updateClient(id, patch);
     if (!record) return NextResponse.json({ error: "Klien tidak ditemukan" }, { status: 404 });
@@ -46,6 +48,7 @@ export async function PATCH(req) {
 
 export async function DELETE(req) {
   try {
+    await refreshDb();
     const { id } = await req.json();
     deleteClient(id);
     return NextResponse.json({ ok: true, clients: listClients() });
