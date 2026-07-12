@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { IconWand, IconTrash, IconExternal, IconPrint, IconPlay } from "@/components/icons";
+import { IconWand, IconTrash, IconExternal, IconPrint, IconPlay, IconDoc } from "@/components/icons";
 import Link from "next/link";
 
 export default function ListingActions({ slug, canImprove = true }) {
@@ -36,6 +36,9 @@ export default function ListingActions({ slug, canImprove = true }) {
 
   return (
     <div className="flex items-center gap-1">
+      <Link href={`/admin/listings/${slug}/edit`} className="grid h-9 w-9 place-items-center rounded-xl text-ink-faint hover:bg-ink/[.05] hover:text-pine-700" title="Edit">
+        <IconDoc size={18} />
+      </Link>
       <Link href={`/properti/${slug}`} target="_blank" className="grid h-9 w-9 place-items-center rounded-xl text-ink-faint hover:bg-ink/[.05] hover:text-pine-700" title="Lihat">
         <IconExternal size={18} />
       </Link>

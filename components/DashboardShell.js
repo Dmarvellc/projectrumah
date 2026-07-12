@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { IconLogout, IconExternal } from "@/components/icons";
+import PersistenceBanner from "@/components/admin/PersistenceBanner";
 
 // Kerangka bersama 3 dashboard (Agent / Marketing / Developer).
 // Desain: tegas, minimalist, teks & ikon besar, radius lega.
@@ -80,7 +81,10 @@ export default function DashboardShell({ brand, nav, children }) {
             })}
           </div>
 
-          <div className="min-w-0 flex-1 p-5 sm:p-10">{children}</div>
+          <div className="min-w-0 flex-1 p-5 sm:p-10">
+            <PersistenceBanner />
+            {children}
+          </div>
         </div>
       </div>
     </div>
