@@ -81,6 +81,7 @@ function buildScenes(l) {
 function loadImage(src) {
   return new Promise((resolve) => {
     const im = new Image();
+    im.crossOrigin = "anonymous";
     im.onload = () => resolve(im);
     im.onerror = () => resolve(null);
     im.src = src;
@@ -1054,7 +1055,7 @@ export default function VideoStudio({ listings = [], initialSlug = "", brand = {
     const boxW = Math.min(w - 70 * u, totalW + paddingX * 2);
     const boxH = fontSize + paddingY * 2;
     const boxX = (w - boxW) / 2;
-    const boxY = h - 230 * u - boxH / 2;
+    const boxY = h - 110 * u - boxH;
 
     rr(ctx, boxX, boxY, boxW, boxH, 22 * u);
     ctx.fillStyle = "rgba(18, 18, 18, 0.75)";
@@ -1308,6 +1309,36 @@ export default function VideoStudio({ listings = [], initialSlug = "", brand = {
     }
   };
 
+  const downloadVideo = async () => {
+    if (!videoUrl) return;
+    try {
+      const res = await fetch(videoUrl);
+      const blob = await res.blob();
+      const filename = `${listing.slug}-${format}.${videoExt}`;
+
+      // Try Web Share API first (works well on mobile)
+      if (navigator.canShare && navigator.canShare({ files: [new File([blob], filename, { type: blob.type })] })) {
+        await navigator.share({
+          files: [new File([blob], filename, { type: blob.type })],
+          title: listing.title,
+        });
+        return;
+      }
+
+      // Fallback: programmatic download link (desktop & Android)
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(a.href);
+    } catch (err) {
+      // Last fallback: open in new tab
+      window.open(videoUrl, "_blank");
+    }
+  };
+
   const copyCaption = async () => {
     try {
       await navigator.clipboard.writeText(caption);
@@ -1522,13 +1553,13 @@ export default function VideoStudio({ listings = [], initialSlug = "", brand = {
           {error && <div className="rounded-2xl bg-red-50 p-3.5 text-xs font-bold text-red-700 border border-red-200">{error}</div>}
 
           {videoUrl && (
-            <a
-              href={videoUrl}
-              download={`${listing.slug}-${format}.${videoExt}`}
+            <button
+              type="button"
+              onClick={downloadVideo}
               className="w-full bg-ink text-white font-black py-3.5 px-6 rounded-2xl shadow-md hover:bg-black transition flex items-center justify-center gap-2 text-sm"
             >
-              <IconCheck size={18} className="text-emerald-400" /> Unduh Video Jadi (.{videoExt})
-            </a>
+              <IconCheck size={18} className="text-emerald-400" /> Unduh / Bagikan Video (.{videoExt})
+            </button>
           )}
         </div>
 
