@@ -27,12 +27,24 @@ async function pickAvcCodec(width, height, framerate, bitrate) {
   return null;
 }
 
-const FORMATS = {
+const isMobile = () => typeof navigator !== "undefined" && /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+
+const FORMATS_FULL = {
   story: { w: 1080, h: 1920, label: "Reels / TikTok / Shorts" },
   post: { w: 1080, h: 1350, label: "Instagram Feed" },
   square: { w: 1080, h: 1080, label: "Square Post" },
   wide: { w: 1920, h: 1080, label: "Landscape / YouTube" },
 };
+
+// Resolusi lebih rendah di mobile agar tidak OOM / blank
+const FORMATS_MOBILE = {
+  story: { w: 720, h: 1280, label: "Reels / TikTok / Shorts" },
+  post: { w: 720, h: 900, label: "Instagram Feed" },
+  square: { w: 720, h: 720, label: "Square Post" },
+  wide: { w: 1280, h: 720, label: "Landscape / YouTube" },
+};
+
+const FORMATS = typeof navigator !== "undefined" && isMobile() ? FORMATS_MOBILE : FORMATS_FULL;
 
 const INK = "#171311";
 const PAPER = "#F7F4EE";
@@ -80,10 +92,17 @@ function buildScenes(l) {
 
 function loadImage(src) {
   return new Promise((resolve) => {
+    if (!src) return resolve(null);
     const im = new Image();
     im.crossOrigin = "anonymous";
     im.onload = () => resolve(im);
-    im.onerror = () => resolve(null);
+    im.onerror = () => {
+      // Retry tanpa crossOrigin jika CORS gagal (mobile proxy issue)
+      const im2 = new Image();
+      im2.onload = () => resolve(im2);
+      im2.onerror = () => resolve(null);
+      im2.src = src;
+    };
     im.src = src;
   });
 }
@@ -1167,20 +1186,24 @@ export default function VideoStudio({ listings = [], initialSlug = "", brand = {
       const assets = await ensureVoiceAssets();
 
       const { imgsMap, w, h, ctx, canvas } = await prepare();
-      const fps = 30;
+      const mobile = isMobile();
+      const fps = mobile ? 24 : 30;
       const frames = Math.round(total * fps);
-      const bitrate = 9_000_000;
-      const codec = await pickAvcCodec(w, h, fps, bitrate);
+      const bitrate = mobile ? 4_000_000 : 9_000_000;
+
+      // Di mobile, langsung gunakan MediaRecorder (lebih stabil, tidak freeze)
+      const codec = mobile ? null : await pickAvcCodec(w, h, fps, bitrate);
 
       setPhase("recording");
 
-      const hasAudio = (musicTrack !== "none" || (voiceEnabled && assets.buffer)) && (await aacSupported());
+      const hasAudio = (musicTrack !== "none" || (voiceEnabled && assets.buffer)) && (mobile ? true : await aacSupported());
 
       if (codec) {
+        // --- Desktop: WebCodecs MP4 (frame-by-frame) ---
         const muxer = new Muxer({
           target: new ArrayBufferTarget(),
           video: { codec: "avc", width: w, height: h },
-          ...(hasAudio ? { audio: { codec: "aac", sampleRate: 44100, numberOfChannels: 2 } } : {}),
+          ...(hasAudio && (await aacSupported()) ? { audio: { codec: "aac", sampleRate: 44100, numberOfChannels: 2 } } : {}),
           fastStart: "in-memory",
         });
 
@@ -1198,13 +1221,14 @@ export default function VideoStudio({ listings = [], initialSlug = "", brand = {
           const frame = new VideoFrame(canvas, { timestamp: Math.round(t * 1_000_000) });
           encoder.encode(frame, { keyFrame: f % (fps * 2) === 0 });
           frame.close();
-          if (f % 15 === 0) await new Promise((r) => setTimeout(r, 0));
+          // Yield ke UI thread lebih sering agar tidak freeze
+          if (f % 8 === 0) await new Promise((r) => setTimeout(r, 0));
         }
 
         await encoder.flush();
         encoder.close();
 
-        if (hasAudio) {
+        if (hasAudio && (await aacSupported())) {
           const actx = new (window.AudioContext || window.webkitAudioContext)();
           const musicBuf = musicTrack !== "none" ? await loadMusicBuffer(musicTrack, total, actx) : null;
           const mixed = await mixAudio(assets.buffer, musicBuf, total, 0.14);
@@ -1249,23 +1273,26 @@ export default function VideoStudio({ listings = [], initialSlug = "", brand = {
         return;
       }
 
-      // Fallback MediaRecorder WebM jika tidak mendukung WebCodecs MP4
+      // --- Mobile & Fallback: MediaRecorder (realtime, tidak freeze) ---
       const stream = canvas.captureStream(fps);
+
+      // Audio mixing via AudioContext destination
+      let recAudioCtx = null;
       if (hasAudio) {
-        const actx = new (window.AudioContext || window.webkitAudioContext)();
-        const dest = actx.createMediaStreamDestination();
+        recAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const dest = recAudioCtx.createMediaStreamDestination();
         if (voiceEnabled && assets.buffer) {
-          const vSrc = actx.createBufferSource();
+          const vSrc = recAudioCtx.createBufferSource();
           vSrc.buffer = assets.buffer;
           vSrc.connect(dest);
           vSrc.start(0);
         }
         if (musicTrack !== "none") {
-          const mBuf = await loadMusicBuffer(musicTrack, total, actx);
+          const mBuf = await loadMusicBuffer(musicTrack, total, recAudioCtx);
           if (mBuf) {
-            const mSrc = actx.createBufferSource();
+            const mSrc = recAudioCtx.createBufferSource();
             mSrc.buffer = mBuf;
-            const g = actx.createGain();
+            const g = recAudioCtx.createGain();
             g.gain.value = voiceEnabled && assets.buffer ? 0.14 : 0.75;
             mSrc.connect(g).connect(dest);
             mSrc.start(0);
@@ -1274,36 +1301,55 @@ export default function VideoStudio({ listings = [], initialSlug = "", brand = {
         dest.stream.getAudioTracks().forEach((trk) => stream.addTrack(trk));
       }
 
-      const mime = ["video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm"].find((m) =>
-        MediaRecorder.isTypeSupported(m)
-      );
-      setVideoExt("webm");
-      const recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 6_000_000 });
+      const mimeOptions = ["video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm", "video/mp4"];
+      const mime = mimeOptions.find((m) => {
+        try { return MediaRecorder.isTypeSupported(m); } catch { return false; }
+      });
+      if (!mime) {
+        setError("Browser ini tidak mendukung perekaman video. Gunakan Chrome/Edge terbaru.");
+        setPhase("idle");
+        return;
+      }
+      setVideoExt(mime.includes("mp4") ? "mp4" : "webm");
+      const recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: mobile ? 3_000_000 : 6_000_000 });
       const chunks = [];
       recorder.ondataavailable = (e) => e.data?.size && chunks.push(e.data);
+      recorder.onerror = (e) => {
+        console.error("MediaRecorder error:", e);
+        setError("Perekaman gagal: " + (e.error?.message || "unknown error"));
+        setPhase("idle");
+      };
       recorder.onstop = () => {
-        const blob = new Blob(chunks, { type: mime || "video/webm" });
+        if (recAudioCtx && recAudioCtx.state !== "closed") recAudioCtx.close();
+        const blob = new Blob(chunks, { type: mime });
         if (blob.size === 0) {
-          setError("Perekaman gagal di browser ini. Pakai Chrome/Edge terbaru.");
+          setError("Perekaman gagal — video kosong. Coba lagi atau gunakan Chrome terbaru.");
           setPhase("idle");
           return;
         }
         setVideoUrl(URL.createObjectURL(blob));
         setPhase("done");
       };
-      recorder.start(250);
+      recorder.start(500);
       const t0 = performance.now();
       const loop = () => {
         const t = (performance.now() - t0) / 1000;
         setProgress(Math.min(1, t / total));
         
-        drawFrameWithAssets(ctx, imgsMap, Math.min(t, total - 0.001), w, h, assets.buffer, assets.alignments);
+        try {
+          drawFrameWithAssets(ctx, imgsMap, Math.min(t, total - 0.001), w, h, assets.buffer, assets.alignments);
+        } catch (drawErr) {
+          console.error("Draw error:", drawErr);
+        }
         
         if (t < total) rafRef.current = requestAnimationFrame(loop);
-        else recorder.stop();
+        else {
+          setTimeout(() => { try { recorder.stop(); } catch {} }, 300);
+        }
       };
       rafRef.current = requestAnimationFrame(loop);
     } catch (err) {
+      console.error("Render error:", err);
       setError(String(err?.message || err));
       setPhase("idle");
     }
@@ -1575,22 +1621,29 @@ export default function VideoStudio({ listings = [], initialSlug = "", brand = {
         </div>
       </div>
 
-      {/* KOLOM KANAN: PRATINJAU VIDEO & PEMUTAR HASIL EXPORT (TANPA OVERLAY / CHIP / HINT) */}
-      <div className="card flex flex-col items-center justify-center p-8 rounded-3xl bg-neutral-900 border border-neutral-800 min-h-[760px] shadow-xl sticky top-8">
+      {/* KOLOM KANAN: PRATINJAU VIDEO & PEMUTAR HASIL EXPORT */}
+      <div className="card flex flex-col items-center justify-center p-4 sm:p-8 rounded-3xl bg-neutral-900 border border-neutral-800 min-h-[400px] xl:min-h-[760px] shadow-xl xl:sticky xl:top-8">
         <div style={{ maxWidth: format === "story" ? 364 : fmt.w >= fmt.h ? 640 : 380 }} className="w-full relative">
-          <div className="relative w-full rounded-3xl overflow-hidden border border-neutral-800 shadow-2xl bg-black">
+          <div className="relative w-full bg-black" style={{ aspectRatio: `${fmt.w} / ${fmt.h}` }}>
             <canvas
               ref={canvasRef}
               width={fmt.w}
               height={fmt.h}
-              className={`w-full h-auto block ${videoUrl && phase === "done" ? "hidden" : ""}`}
+              className={`absolute inset-0 w-full h-full object-contain ${videoUrl && phase === "done" ? "hidden" : ""}`}
             />
             {videoUrl && phase === "done" && (
-              <video src={videoUrl} controls autoPlay loop playsInline className="w-full h-auto block bg-black" />
+              <video
+                src={videoUrl}
+                controls
+                loop
+                playsInline
+                preload="auto"
+                className="absolute inset-0 w-full h-full object-contain bg-black"
+              />
             )}
           </div>
 
-          <p className="mt-5 text-center text-xs font-bold text-neutral-400">
+          <p className="mt-4 text-center text-xs font-bold text-neutral-400">
             {phase === "done" ? "Video selesai dicetak. Putar di atas atau klik unduh di panel kiri." : "Pratinjau Video · Semua visual dan teks dirancang otomatis oleh AI."}
           </p>
         </div>
